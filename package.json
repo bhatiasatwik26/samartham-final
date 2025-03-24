@@ -1,0 +1,23 @@
+{
+  "name": "samarthanam-uptilnowbefe",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@tanstack/react-query": "^5.69.0",
+    "@types/xlsx": "^0.0.35",
+    "react-router-dom": "^7.4.0",
+    "sonner": "^2.0.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.2.3"
+  }
+}
