@@ -24,6 +24,7 @@ import ParticipantDashboard from "./pages/ParticipantDashboard";
 import ParticipantLogin from "./pages/ParticipantLogin";
 import VolunteerRegister from "./pages/VolunteerRegister";
 import VolunteerLogin from "./pages/VolunteerLogin";
+import SpeechRecognizer from "./components/SpeechRecognizer";
 
 const App = () => {
   return (
@@ -49,6 +50,8 @@ const App = () => {
         <Route path="/participant-login" element={<ParticipantLogin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+
+      <SpeechRecognizer/>
       <Toaster />
     </TooltipProvider>
   );
