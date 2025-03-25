@@ -12,8 +12,8 @@ const SignIn = () => {
   const navigate = useNavigate();
   
   const handleAdminClick = () => {
-    // Navigate directly to admin dashboard
-    navigate('/admin-dashboard');
+    // Navigate to admin login page
+    navigate('/admin-login');
   };
   
   const handleVolunteerClick = () => {

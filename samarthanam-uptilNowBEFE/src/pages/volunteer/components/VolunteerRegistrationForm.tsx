@@ -4,58 +4,61 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Calendar, Clock, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { events as allEvents } from "@/data/events";
-
-// Mock events for the form
-const eventOptions = [
-  { 
-    id: 'event-1', 
-    title: 'Run for Vision 2024',
-    date: 'August 15, 2024',
-    location: 'Cubbon Park, Bengaluru',
-    tasks: ['Registration Desk', 'Route Marshal', 'Water Station', 'Medical Support', 'Photography']
-  },
-  { 
-    id: 'event-2', 
-    title: 'Annual Charity Marathon',
-    date: 'September 5, 2024',
-    location: 'Lalbagh Botanical Garden, Bengaluru',
-    tasks: ['Check-in Counter', 'Route Guide', 'Refreshment Distribution', 'First Aid Support', 'Media Coverage']
-  },
-  { 
-    id: 'event-3', 
-    title: 'Awareness Workshop',
-    date: 'July 25, 2024',
-    location: 'Samarthanam Trust Headquarters',
-    tasks: ['Setup Coordination', 'Registration Management', 'Speaker Assistance', 'Technical Support', 'Cleanup']
-  },
-  { 
-    id: 'event-4', 
-    title: 'Cultural Festival',
-    date: 'October 10, 2024',
-    location: 'Freedom Park, Bengaluru',
-    tasks: ['Stage Management', 'Artist Coordination', 'Audience Assistance', 'Stall Setup', 'Event Documentation']
-  }
-];
 
 const VolunteerRegistrationForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
-    selectedEvent: '',
-    selectedTasks: [],
-    preferredRole: '',
-    additionalInfo: ''
+    interestedCategories: [],
+    interestedTasks: [],
+    skills: [],
+    availability: []
   });
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  
+
+  const categories = [
+    'Education',
+    'Healthcare',
+    'Environment',
+    'Sports',
+    'Arts & Culture',
+    'Community Service'
+  ];
+
+  const tasks = [
+    'Event Coordination',
+    'Teaching',
+    'Medical Support',
+    'Administrative Work',
+    'Fundraising',
+    'Technical Support'
+  ];
+
+  const skillsList = [
+    'Leadership',
+    'Communication',
+    'First Aid',
+    'Teaching',
+    'Technical',
+    'Organization',
+    'Languages'
+  ];
+
+  const daysOfWeek = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday'
+  ];
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -63,74 +66,60 @@ const VolunteerRegistrationForm = () => {
       [name]: value
     }));
   };
-  
-  const handleEventSelect = (eventId) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedEvent: eventId,
-      selectedTasks: [] // Reset tasks when event changes
-    }));
-    
-    // Find the selected event to display its tasks
-    const event = eventOptions.find(event => event.id === eventId);
-    setSelectedEvent(event);
-  };
-  
-  const handleTaskToggle = (task) => {
+
+  const handleArraySelection = (field, value) => {
     setFormData(prev => {
-      const tasks = [...prev.selectedTasks];
+      const currentArray = [...prev[field]];
+      const index = currentArray.indexOf(value);
       
-      if (tasks.includes(task)) {
-        // Remove the task if already selected
-        return {
-          ...prev,
-          selectedTasks: tasks.filter(t => t !== task)
-        };
+      if (index === -1) {
+        currentArray.push(value);
       } else {
-        // Add the task if not selected
-        return {
-          ...prev,
-          selectedTasks: [...tasks, task]
-        };
+        currentArray.splice(index, 1);
       }
+
+      return {
+        ...prev,
+        [field]: currentArray
+      };
     });
   };
-  
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Validate form
-    if (!formData.name) {
-      toast.error('Please enter your name');
-      setLoading(false);
-      return;
-    }
-    
-    if (!formData.selectedEvent) {
-      toast.error('Please select an event');
-      setLoading(false);
-      return;
-    }
-    
-    if (formData.selectedTasks.length === 0) {
-      toast.error('Please select at least one task');
-      setLoading(false);
-      return;
-    }
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      // Here you would typically make an API call to your backend
+      // For now, we'll just simulate it
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Add today's date to heatmap activity
+      const submission = {
+        ...formData,
+        heatmapActivity: [{
+          date: new Date(),
+          count: 1
+        }]
+      };
+
+      console.log('Form submission:', submission);
+
       toast.success('Registration successful!', {
         description: 'You have been registered as a volunteer.',
       });
-      
-      // Navigate to volunteer dashboard
-      navigate('/volunteer-dashboard');
-    }, 1500);
+
+      // Navigate to volunteer dashboard or login
+      navigate('/volunteer-login');
+    } catch (error) {
+      toast.error('Registration failed', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 md:p-8">
       <div className="mb-6">
@@ -139,22 +128,35 @@ const VolunteerRegistrationForm = () => {
           Register as a volunteer to help with our events and make a difference.
         </p>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Your Name</Label>
+            <Label htmlFor="name">Full Name</Label>
             <Input
               id="name"
               name="name"
               placeholder="Enter your full name"
               value={formData.name}
               onChange={handleInputChange}
-              className="mt-1"
               required
             />
           </div>
-          
+
+          <div>
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
           <div>
             <Label htmlFor="phone">Phone Number</Label>
             <Input
@@ -164,115 +166,83 @@ const VolunteerRegistrationForm = () => {
               placeholder="Enter your phone number"
               value={formData.phone}
               onChange={handleInputChange}
-              className="mt-1"
+              required
             />
           </div>
         </div>
-        
+
+        {/* Interested Categories */}
         <div className="space-y-3">
-          <Label>Select an Event to Volunteer For</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {eventOptions.map((event) => (
-              <div 
-                key={event.id}
-                className={cn(
-                  "border rounded-lg p-4 cursor-pointer transition-all",
-                  formData.selectedEvent === event.id 
-                    ? "border-red-500 bg-red-50 dark:bg-red-900/10" 
-                    : "border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700"
-                )}
-                onClick={() => handleEventSelect(event.id)}
-              >
-                <h3 className="font-medium text-gray-900 dark:text-white mb-2">{event.title}</h3>
-                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center">
-                    <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                    <span>{event.date}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                    <span>{event.location}</span>
-                  </div>
-                </div>
+          <Label>Interested Categories</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {categories.map((category) => (
+              <div key={category} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`category-${category}`}
+                  checked={formData.interestedCategories.includes(category)}
+                  onCheckedChange={() => handleArraySelection('interestedCategories', category)}
+                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <Label htmlFor={`category-${category}`}>{category}</Label>
               </div>
             ))}
           </div>
         </div>
-        
-        {selectedEvent && (
-          <div className="space-y-3">
-            <Label>Select Tasks You'd Like to Help With</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
-              {selectedEvent.tasks.map((task) => (
-                <div key={task} className="flex items-start space-x-2">
-                  <Checkbox 
-                    id={`task-${task}`}
-                    checked={formData.selectedTasks.includes(task)}
-                    onCheckedChange={() => handleTaskToggle(task)}
-                    className="mt-1 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                  />
-                  <Label htmlFor={`task-${task}`} className="cursor-pointer">{task}</Label>
-                </div>
-              ))}
-            </div>
+
+        {/* Interested Tasks */}
+        <div className="space-y-3">
+          <Label>Interested Tasks</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {tasks.map((task) => (
+              <div key={task} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`task-${task}`}
+                  checked={formData.interestedTasks.includes(task)}
+                  onCheckedChange={() => handleArraySelection('interestedTasks', task)}
+                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <Label htmlFor={`task-${task}`}>{task}</Label>
+              </div>
+            ))}
           </div>
-        )}
-        
-        <div className="space-y-3">
-          <Label>Preferred Volunteer Role</Label>
-          <RadioGroup 
-            value={formData.preferredRole}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, preferredRole: value }))}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value="lead" 
-                  id="role-lead"
-                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600" 
-                />
-                <Label htmlFor="role-lead">Team Lead</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value="assistant" 
-                  id="role-assistant"
-                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600" 
-                />
-                <Label htmlFor="role-assistant">Assistant</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value="coordinator" 
-                  id="role-coordinator"
-                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600" 
-                />
-                <Label htmlFor="role-coordinator">Coordinator</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value="general" 
-                  id="role-general"
-                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600" 
-                />
-                <Label htmlFor="role-general">General Volunteer</Label>
-              </div>
-            </div>
-          </RadioGroup>
         </div>
-        
+
+        {/* Skills */}
         <div className="space-y-3">
-          <Label htmlFor="additionalInfo">Additional Information</Label>
-          <Textarea
-            id="additionalInfo"
-            name="additionalInfo"
-            placeholder="Tell us any additional information that might help (e.g., special skills, availability, etc.)"
-            value={formData.additionalInfo}
-            onChange={handleInputChange}
-            className="h-24"
-          />
+          <Label>Skills</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {skillsList.map((skill) => (
+              <div key={skill} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`skill-${skill}`}
+                  checked={formData.skills.includes(skill)}
+                  onCheckedChange={() => handleArraySelection('skills', skill)}
+                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <Label htmlFor={`skill-${skill}`}>{skill}</Label>
+              </div>
+            ))}
+          </div>
         </div>
-        
+
+        {/* Availability */}
+        <div className="space-y-3">
+          <Label>Availability</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {daysOfWeek.map((day) => (
+              <div key={day} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`day-${day}`}
+                  checked={formData.availability.includes(day)}
+                  onCheckedChange={() => handleArraySelection('availability', day)}
+                  className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <Label htmlFor={`day-${day}`}>{day}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <Button
           type="submit"
           disabled={loading}
