@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: "http://localhost:8081", // Allow requests from your frontend
+    origin: "*", // Allow requests from your frontend
     credentials: true, // Allow cookies and auth headers
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
   })
@@ -57,7 +57,7 @@ app.get("/", (req, res) => {
 });
 
 // Set up the server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   // using server.listen instead of app.listen to support socket.io
   console.log(`Server running on port ${PORT}`);

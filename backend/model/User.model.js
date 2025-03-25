@@ -25,15 +25,23 @@ const UserSchema = new mongoose.Schema({
           status: { type: String, enum: ["pending", "completed"], default: "pending" },
           deadline: { type: Date },
         },
-      ],
+      ],   
     },
   ],
+    interestedCategories: [{ type: String }], 
+    interestedTasks: [{ type: String }], 
+    skills: [{ type: String }], 
   heatmapActivity: [
     {
       date: { type: Date, required: true },
       count: { type: Number, required: true },
     },
   ],
+  availability: {
+    type: [String],
+    enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    default: [], // User can select available days
+  },
 });
 
 const User = mongoose.model('User', UserSchema);

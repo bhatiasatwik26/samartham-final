@@ -7,6 +7,7 @@ const eventSchema = new mongoose.Schema({
     date: { type: Date, required: true },
     description: { type: String },
     photos: { type: [String], default: [] }, // Array of image URLs
+    category: { type: String, required: true }, // Added category field
     geographicalLocation: {
         type: { type: String, default: "Point" },
         coordinates: { type: [Number], required: true }, // [longitude, latitude]

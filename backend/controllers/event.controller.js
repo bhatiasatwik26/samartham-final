@@ -1,5 +1,6 @@
 import Event from "../model/Event.model.js";
 import User from "../model/User.model.js";
+import Participant from "../model/Participant.model.js";
 import { sendEmail } from "../utils/email.utils.js";
 
 export const getEvents = async (req, res) => {
@@ -118,4 +119,85 @@ export const getEventTasks = async (req, res) => {
       console.error("Error fetching event tasks:", error);
       res.status(500).json({ error: "Server error" });
   }
+};
+
+
+
+
+export const findPotentialVolunteers = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Check if the event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Extract category from event (assuming event has a category field)
+    const eventCategory = event.category;
+    if (!eventCategory) {
+        return res.status(400).json({ error: "Event does not have a category." });
+    }
+
+    // Find volunteers who are interested in this category
+    const volunteers = await User.find({ interestedCategories: eventCategory });
+
+    if (volunteers.length === 0) {
+        return res.status(404).json({ message: "No matching volunteers found for this event." });
+    }
+
+    res.status(200).json({ volunteers });
+} catch (error) {
+    console.error("Error finding potential volunteers:", error);
+    res.status(500).json({ error: "Server error" });
+}
+};
+
+
+export const getRegisteredVolunteers = async (req, res) => {
+  try {
+      const { eventId } = req.params;
+
+      // Find users who have subscribed to the given event
+      const volunteers = await User.find(
+          { "eventsSubscribed.eventId": eventId },
+          "name email photo rank eventsSubscribed"
+      );
+
+      if (!volunteers || volunteers.length === 0) {
+          return res.status(404).json({ error: "No volunteers registered for this event" });
+      }
+
+      res.status(200).json({ volunteers });
+  } catch (error) {
+      console.error("Error fetching registered volunteers:", error);
+      res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+// Get number of volunteers & participants in a event
+export const getEventStats = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+
+        // Find event and count volunteers
+        const event = await Event.findById(eventId);
+        if (!event) return res.status(404).json({ message: "Event not found" });
+
+        const volunteerCount = event.volunteersAssigned.length;
+
+        // Count participants from Participant model
+        const participantCount = await Participant.countDocuments({ "participatedEvents.eventId": eventId });
+
+        res.json({
+            eventId,
+            eventName: event.name,
+            volunteerCount,
+            participantCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
 };
