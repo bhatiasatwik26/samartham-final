@@ -9,7 +9,8 @@ const SpeechRecognizer = () => {
   // Function to start speech recognition
   const startSpeechRecognition = () => {
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       console.error("Speech recognition is not supported in this browser.");
@@ -35,6 +36,12 @@ const SpeechRecognizer = () => {
         navigate("/");
       } else if (transcriptText.includes("events")) {
         navigate("/events");
+      } else if (transcriptText.includes("about")) {
+        navigate("/about");
+      } else if (transcriptText.includes("help")) {
+        navigate("/help");
+      } else if (transcriptText.includes("contact")) {
+        navigate("/contact");
       } else if (transcriptText.includes("sign in")) {
         navigate("/signin");
       } else if (transcriptText.includes("volunteer dashboard")) {

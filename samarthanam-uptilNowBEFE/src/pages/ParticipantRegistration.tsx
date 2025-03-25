@@ -1,47 +1,109 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
-import { useInView } from '@/lib/animate';
-import { cn } from '@/lib/utils';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { useInView } from "@/lib/animate";
+import { cn } from "@/lib/utils";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+
+const API_BASE_URL = "http://localhost:3000/api";
 
 const ParticipantRegistration = () => {
   const { ref, isVisible } = useInView();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setLoading(false);
-      toast.success('Registration submitted successfully!', {
-        description: 'You can now sign in as a participant.',
+
+    try {
+      // API endpoint for participant registration
+      const API_URL = `${API_BASE_URL}/participant/signup`; // Replace with your backend URL
+
+      const formData = {
+        firstName: (document.getElementById("firstName") as HTMLInputElement)
+          .value,
+        lastName: (document.getElementById("lastName") as HTMLInputElement)
+          .value,
+        email: (document.getElementById("email") as HTMLInputElement).value,
+        phone: (document.getElementById("phone") as HTMLInputElement).value,
+        password: (document.getElementById("password") as HTMLInputElement)
+          .value,
+        interestedEvents: [
+          (document.getElementById("event1") as HTMLInputElement).checked
+            ? "Run for Vision 2024"
+            : "",
+          (document.getElementById("event2") as HTMLInputElement).checked
+            ? "Annual Charity Marathon"
+            : "",
+          (document.getElementById("event3") as HTMLInputElement).checked
+            ? "Awareness Workshop"
+            : "",
+          (document.getElementById("event4") as HTMLInputElement).checked
+            ? "Cultural Festival"
+            : "",
+        ].filter(Boolean), // Remove empty values
+        additionalInfo: (document.getElementById("message") as HTMLInputElement)
+          .value,
+      };
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
-      
-      // Redirect to participant dashboard or signin page
-      navigate('/participant-dashboard');
-    }, 1500);
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Registration failed");
+      }
+
+      toast.success("Registration successful!", {
+        description:
+          result.message || "You have been registered as a participant.",
+      });
+
+      // Redirect to participant dashboard
+      navigate("/participant-login");
+    } catch (error) {
+      console.error("Error during registration:", error);
+      toast.error("Registration failed", {
+        description: error.message || "Please try again later.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
-      
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6" ref={ref}>
-          <div className={cn(
-            "max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transition-all duration-700 transform",
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-          )}>
+          <div
+            className={cn(
+              "max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transition-all duration-700 transform",
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-12"
+            )}
+          >
             <div className="p-8">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Participant Registration
@@ -49,7 +111,7 @@ const ParticipantRegistration = () => {
               <p className="text-gray-600 dark:text-gray-300 mb-8">
                 Register as a participant to join events and activities
               </p>
-              
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -118,23 +180,33 @@ const ParticipantRegistration = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Interested Events (You can register for events later too)</Label>
+                  <Label>
+                    Interested Events (You can register for events later too)
+                  </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     <div className="flex items-center space-x-2">
                       <Checkbox id="event1" />
-                      <Label htmlFor="event1" className="text-sm">Run for Vision 2024</Label>
+                      <Label htmlFor="event1" className="text-sm">
+                        Run for Vision 2024
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="event2" />
-                      <Label htmlFor="event2" className="text-sm">Annual Charity Marathon</Label>
+                      <Label htmlFor="event2" className="text-sm">
+                        Annual Charity Marathon
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="event3" />
-                      <Label htmlFor="event3" className="text-sm">Awareness Workshop</Label>
+                      <Label htmlFor="event3" className="text-sm">
+                        Awareness Workshop
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="event4" />
-                      <Label htmlFor="event4" className="text-sm">Cultural Festival</Label>
+                      <Label htmlFor="event4" className="text-sm">
+                        Cultural Festival
+                      </Label>
                     </div>
                   </div>
                 </div>
@@ -150,13 +222,24 @@ const ParticipantRegistration = () => {
                 </div>
 
                 <div className="flex items-start space-x-2">
-                  <Checkbox 
-                    id="terms" 
-                    required 
-                    className="mt-1 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600" 
+                  <Checkbox
+                    id="terms"
+                    required
+                    className="mt-1 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                   />
-                  <Label htmlFor="terms" className="text-sm text-gray-600 dark:text-gray-400">
-                    I agree to the <a href="#" className="text-red-600 hover:underline">terms and conditions</a> and the <a href="#" className="text-red-600 hover:underline">privacy policy</a>.
+                  <Label
+                    htmlFor="terms"
+                    className="text-sm text-gray-600 dark:text-gray-400"
+                  >
+                    I agree to the{" "}
+                    <a href="#" className="text-red-600 hover:underline">
+                      terms and conditions
+                    </a>{" "}
+                    and the{" "}
+                    <a href="#" className="text-red-600 hover:underline">
+                      privacy policy
+                    </a>
+                    .
                   </Label>
                 </div>
 
@@ -170,19 +253,25 @@ const ParticipantRegistration = () => {
                 >
                   {loading ? "Processing..." : "Register Now"}
                 </Button>
-                
+
                 <p className="text-center text-gray-500 dark:text-gray-400">
-                  Already have an account? <a href="/signin" className="text-red-600 dark:text-red-400 hover:underline">Sign in</a>
+                  Already have an account?{" "}
+                  <a
+                    href="/signin"
+                    className="text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    Sign in
+                  </a>
                 </p>
               </form>
             </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
 };
 
-export default ParticipantRegistration; 
+export default ParticipantRegistration;

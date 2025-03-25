@@ -1,77 +1,127 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const API_BASE_URL = "http://localhost:3000/api";
 
 const VolunteerRegistrationForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    name: "",
+    email: "",
+    phone: "",
     interestedCategories: [],
     interestedTasks: [],
     skills: [],
-    availability: []
+    availability: [],
   });
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const API_URL = `${API_BASE_URL}/user/register`;
+
+      const submission = {
+        email: formData.email,
+        name: formData.name,
+        interestedCategories: formData.interestedCategories,
+        interestedTasks: formData.interestedTasks,
+        skills: formData.skills,
+        availability: formData.availability,
+      };
+      console.log(submission);
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submission),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Registration failed");
+      }
+
+      toast.success("Registration successful!", {
+        description:
+          result.message || "You have been registered as a volunteer.",
+      });
+
+      // Navigate to volunteer dashboard or login
+      navigate("/volunteer-login");
+    } catch (error) {
+      console.error("Error during registration:", error);
+      toast.error("Registration failed", {
+        description: error.message || "Please try again later.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const categories = [
-    'Education',
-    'Healthcare',
-    'Environment',
-    'Sports',
-    'Arts & Culture',
-    'Community Service'
+    "Education",
+    "Healthcare",
+    "Environment",
+    "Sports",
+    "Arts & Culture",
+    "Community Service",
   ];
 
   const tasks = [
-    'Event Coordination',
-    'Teaching',
-    'Medical Support',
-    'Administrative Work',
-    'Fundraising',
-    'Technical Support'
+    "Event Coordination",
+    "Teaching",
+    "Medical Support",
+    "Administrative Work",
+    "Fundraising",
+    "Technical Support",
   ];
 
   const skillsList = [
-    'Leadership',
-    'Communication',
-    'First Aid',
-    'Teaching',
-    'Technical',
-    'Organization',
-    'Languages'
+    "Leadership",
+    "Communication",
+    "First Aid",
+    "Teaching",
+    "Technical",
+    "Organization",
+    "Languages",
   ];
 
   const daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday'
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
   ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleArraySelection = (field, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const currentArray = [...prev[field]];
       const index = currentArray.indexOf(value);
-      
+
       if (index === -1) {
         currentArray.push(value);
       } else {
@@ -80,50 +130,54 @@ const VolunteerRegistrationForm = () => {
 
       return {
         ...prev,
-        [field]: currentArray
+        [field]: currentArray,
       };
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    try {
-      // Here you would typically make an API call to your backend
-      // For now, we'll just simulate it
-      await new Promise(resolve => setTimeout(resolve, 1500));
+  //   try {
+  //     // Here you would typically make an API call to your backend
+  //     // For now, we'll just simulate it
+  //     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Add today's date to heatmap activity
-      const submission = {
-        ...formData,
-        heatmapActivity: [{
-          date: new Date(),
-          count: 1
-        }]
-      };
+  //     // Add today's date to heatmap activity
+  //     const submission = {
+  //       ...formData,
+  //       heatmapActivity: [
+  //         {
+  //           date: new Date(),
+  //           count: 1,
+  //         },
+  //       ],
+  //     };
 
-      console.log('Form submission:', submission);
+  //     console.log("Form submission:", submission);
 
-      toast.success('Registration successful!', {
-        description: 'You have been registered as a volunteer.',
-      });
+  //     toast.success("Registration successful!", {
+  //       description: "You have been registered as a volunteer.",
+  //     });
 
-      // Navigate to volunteer dashboard or login
-      navigate('/volunteer-login');
-    } catch (error) {
-      toast.error('Registration failed', {
-        description: 'Please try again later.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Navigate to volunteer dashboard or login
+  //     navigate("/volunteer-login");
+  //   } catch (error) {
+  //     toast.error("Registration failed", {
+  //       description: "Please try again later.",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 md:p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Volunteer Registration</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Volunteer Registration
+        </h2>
         <p className="text-gray-600 dark:text-gray-300">
           Register as a volunteer to help with our events and make a difference.
         </p>
@@ -180,7 +234,9 @@ const VolunteerRegistrationForm = () => {
                 <Checkbox
                   id={`category-${category}`}
                   checked={formData.interestedCategories.includes(category)}
-                  onCheckedChange={() => handleArraySelection('interestedCategories', category)}
+                  onCheckedChange={() =>
+                    handleArraySelection("interestedCategories", category)
+                  }
                   className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                 />
                 <Label htmlFor={`category-${category}`}>{category}</Label>
@@ -198,7 +254,9 @@ const VolunteerRegistrationForm = () => {
                 <Checkbox
                   id={`task-${task}`}
                   checked={formData.interestedTasks.includes(task)}
-                  onCheckedChange={() => handleArraySelection('interestedTasks', task)}
+                  onCheckedChange={() =>
+                    handleArraySelection("interestedTasks", task)
+                  }
                   className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                 />
                 <Label htmlFor={`task-${task}`}>{task}</Label>
@@ -216,7 +274,7 @@ const VolunteerRegistrationForm = () => {
                 <Checkbox
                   id={`skill-${skill}`}
                   checked={formData.skills.includes(skill)}
-                  onCheckedChange={() => handleArraySelection('skills', skill)}
+                  onCheckedChange={() => handleArraySelection("skills", skill)}
                   className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                 />
                 <Label htmlFor={`skill-${skill}`}>{skill}</Label>
@@ -234,7 +292,9 @@ const VolunteerRegistrationForm = () => {
                 <Checkbox
                   id={`day-${day}`}
                   checked={formData.availability.includes(day)}
-                  onCheckedChange={() => handleArraySelection('availability', day)}
+                  onCheckedChange={() =>
+                    handleArraySelection("availability", day)
+                  }
                   className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                 />
                 <Label htmlFor={`day-${day}`}>{day}</Label>
@@ -258,4 +318,4 @@ const VolunteerRegistrationForm = () => {
   );
 };
 
-export default VolunteerRegistrationForm; 
+export default VolunteerRegistrationForm;

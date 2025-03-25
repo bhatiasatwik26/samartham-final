@@ -28,9 +28,11 @@ import adminApi, {
   EventProgress,
   Volunteer,
   VolunteerOverview,
+  getAllStats,
 } from "@/services/adminApi";
 import { useToast } from "@/components/ui/use-toast";
 import ReportCharts from "@/components/ReportCharts";
+import { Reports } from "@/types/report";
 
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -42,6 +44,7 @@ const AdminDashboard = () => {
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
   const [currentVolunteer, setCurrentVolunteer] = useState<any>(null);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const [reports, setReports] = useState<Reports[]>([]);
   const [newVolunteer, setNewVolunteer] = useState({
     name: "",
     email: "",
@@ -76,7 +79,6 @@ const AdminDashboard = () => {
     {
       activeVolunteers: 0,
       newVolunteers: 0,
-      pendingApprovals: 0,
     }
   );
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
@@ -172,13 +174,53 @@ const AdminDashboard = () => {
       setIsLoading((prev) => ({ ...prev, volunteers: false }));
     }
   };
+  const fetchEvents = async () => {
+    setIsLoading((prev) => ({ ...prev, events: true }));
+    try {
+      const eventData = await adminApi.getEvents();
+      setLocalEvents(eventData);
+    } catch (error) {
+      console.error("Error fetching volunteers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load volunteers data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading((prev) => ({ ...prev, events: false }));
+    }
+  };
+
+  const fetchEventStats = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:3000/api/event/getAllEventStats"
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch event stats");
+      }
+
+      const stats: Reports[] = await response.json(); // ✅ Explicitly define the type
+
+      setReports(stats); // ✅ Set the state with the correct type
+    } catch (error) {
+      console.error("Error fetching event stats:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load event stats",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading((prev) => ({ ...prev, generateReport: false }));
+    }
+  };
 
   // Add function to fetch admin info
   const fetchAdminInfo = async () => {
     try {
       setAdminInfo((prev) => ({ ...prev, isLoading: true }));
-      // Attempt to get admin data from backend
-      // For now we'll use fallback data since we're connecting to mock API
+
       setTimeout(() => {
         setAdminInfo({
           name: "Admin Dashboard",
@@ -195,10 +237,15 @@ const AdminDashboard = () => {
   // Load data based on active section
   useEffect(() => {
     fetchAdminInfo();
+    fetchEventStats();
+    // fetchEvents();
     if (activeSection === "dashboard") {
       fetchDashboardData();
     } else if (activeSection === "volunteers") {
       fetchVolunteers();
+    } else if (activeSection === "reports") {
+      console.log("here");
+      fetchEventStats();
     }
   }, [activeSection]);
 
@@ -266,7 +313,6 @@ const AdminDashboard = () => {
         address: newVolunteer.address,
         interests: newVolunteer.interests,
         events: [],
-        joined: new Date().toISOString().split("T")[0],
         status: newVolunteer.status as "active" | "inactive",
       };
 
@@ -329,7 +375,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handle saving volunteer events
   const saveVolunteerEvents = async () => {
     if (!currentVolunteer) return;
 
@@ -447,22 +492,29 @@ const AdminDashboard = () => {
           <h3 className="text-lg font-semibold mb-4">Event Progress</h3>
           <div className="space-y-4">
             {eventProgress.length > 0 ? (
-              eventProgress.map((event) => (
-                <div key={event.eventId}>
-                  <div className="flex justify-between mb-1">
-                    <p className="font-medium">{event.title}</p>
-                    <span className={`text-sm text-${event.color}-600`}>
-                      {event.progress}%
-                    </span>
+              eventProgress.slice(0, 5).map(
+                (
+                  event // Show only first 3 events
+                ) => (
+                  <div key={event.eventId}>
+                    <div className="flex justify-between mb-1">
+                      <p className="font-medium">{event.title}</p>
+                      <span className={`text-sm text-${event.color}-600`}>
+                        {event.progress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full bg-${event.color}-500`}
+                        style={{
+                          width: `${event.progress}%`,
+                          backgroundColor: `var(--tw-${event.color}-500)`,
+                        }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div
-                      className={`bg-${event.color}-500 h-2 rounded-full`}
-                      style={{ width: `${event.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))
+                )
+              )
             ) : (
               <p className="text-sm text-gray-500">No events in progress</p>
             )}
@@ -473,19 +525,8 @@ const AdminDashboard = () => {
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              onClick={() => {
-                if (isLoading.addVolunteer) return;
-                setIsLoading((prev) => ({ ...prev, addVolunteer: true }));
-                setTimeout(() => {
-                  setIsAddVolunteerModalOpen(true);
-                  setIsLoading((prev) => ({ ...prev, addVolunteer: false }));
-                  toast({
-                    title: "Add Volunteer",
-                    description: "Opening volunteer registration form",
-                  });
-                }, 300);
-              }}
+            {/* <button
+              onClick={() => setActiveSection("volunteers")}
               disabled={isLoading.addVolunteer}
               className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-4 rounded-xl transition-all duration-200 hover:shadow-md group h-24 relative overflow-hidden"
             >
@@ -507,7 +548,7 @@ const AdminDashboard = () => {
                   </span>
                 </>
               )}
-            </button>
+            </button> */}
 
             <button
               onClick={() => {
@@ -628,7 +669,7 @@ const AdminDashboard = () => {
             </div>
           )}
           <h3 className="text-lg font-semibold mb-4">Volunteer Overview</h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
               <div>
                 <p className="font-medium">Active Volunteers</p>
@@ -647,7 +688,7 @@ const AdminDashboard = () => {
                 {volunteerOverview.newVolunteers}
               </p>
             </div>
-            <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+            {/* <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
               <div>
                 <p className="font-medium">Pending Approvals</p>
                 <p className="text-sm text-gray-500">Waiting for review</p>
@@ -655,7 +696,7 @@ const AdminDashboard = () => {
               <p className="text-xl font-bold text-orange-600">
                 {volunteerOverview.pendingApprovals}
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -1132,7 +1173,10 @@ const AdminDashboard = () => {
               // Export events data as CSV
               const headers = "Title,Date,Location,Status\n";
               const csvContent = localEvents.reduce((acc: string, event) => {
-                return acc + `"${event.title}","${event.date}","${event.location}","${event.status}"\n`;
+                return (
+                  acc +
+                  `"${event.title}","${event.date}","${event.location}","${event.status}"\n`
+                );
               }, headers);
 
               const blob = new Blob([csvContent], {
@@ -1211,9 +1255,15 @@ const AdminDashboard = () => {
               <div className="mt-auto space-y-2">
                 <button
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this event?')) {
-                      setLocalEvents(prevEvents => prevEvents.filter(e => e.id !== event.id));
-                      toast.success('Event deleted successfully');
+                    if (
+                      window.confirm(
+                        "Are you sure you want to delete this event?"
+                      )
+                    ) {
+                      setLocalEvents((prevEvents) =>
+                        prevEvents.filter((e) => e.id !== event.id)
+                      );
+                      toast.success("Event deleted successfully");
                     }
                   }}
                   className="w-full px-4 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors duration-200"
@@ -1244,7 +1294,7 @@ const AdminDashboard = () => {
   ];
 
   const renderReports = () => {
-    return <ReportCharts data={dummyReports} />;
+    return <ReportCharts reports={reports} />;
   };
 
   // Render content based on active section
@@ -1276,7 +1326,7 @@ const AdminDashboard = () => {
   // Event Create Modal Component
   const EventCreateModal = () => {
     if (!isCreateEventModalOpen) return null;
-    
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1296,33 +1346,33 @@ const AdminDashboard = () => {
               try {
                 const formData = new FormData(e.currentTarget);
                 const eventData = {
-                  name: formData.get('name'),
-                  description: formData.get('description'),
-                  date: formData.get('date'),
-                  time: formData.get('time'),
-                  location: formData.get('location'),
-                  imageUrl: formData.get('imageUrl') || '',
-                  category: formData.get('category'),
+                  name: formData.get("name"),
+                  description: formData.get("description"),
+                  date: formData.get("date"),
+                  time: formData.get("time"),
+                  location: formData.get("location"),
+                  imageUrl: formData.get("imageUrl") || "",
+                  category: formData.get("category"),
                   timestamps: {
-                    registrationStart: formData.get('registrationStart'),
-                    registrationEnd: formData.get('registrationEnd'),
-                    eventStart: formData.get('eventStart'),
-                    eventEnd: formData.get('eventEnd')
-                  }
+                    registrationStart: formData.get("registrationStart"),
+                    registrationEnd: formData.get("registrationEnd"),
+                    eventStart: formData.get("eventStart"),
+                    eventEnd: formData.get("eventEnd"),
+                  },
                 };
 
-                console.log('Event Data to be sent:', eventData);
+                console.log("Event Data to be sent:", eventData);
 
                 // For now, we'll simulate a successful response
                 // Later this will be replaced with actual backend call
                 const mockResponse = {
                   success: true,
-                  id: 'event-' + Date.now(),
-                  ...eventData
+                  id: "event-" + Date.now(),
+                  ...eventData,
                 };
 
                 // Simulate API delay
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise((resolve) => setTimeout(resolve, 1000));
 
                 // Handle success
                 toast({
@@ -1335,13 +1385,15 @@ const AdminDashboard = () => {
 
                 // Optional: Update local state or refresh events list
                 // This part will be implemented when backend is ready
-
               } catch (error) {
-                console.error('Error in event creation:', error);
+                console.error("Error in event creation:", error);
                 toast({
                   title: "Error",
-                  description: error instanceof Error ? error.message : "Failed to create event. Please try again.",
-                  variant: "destructive"
+                  description:
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to create event. Please try again.",
+                  variant: "destructive",
                 });
               }
             }}
@@ -1349,7 +1401,9 @@ const AdminDashboard = () => {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Event Name *</label>
+                <label className="block text-sm font-medium mb-1">
+                  Event Name *
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -1360,7 +1414,9 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
+                <label className="block text-sm font-medium mb-1">
+                  Category *
+                </label>
                 <select
                   name="category"
                   className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -1377,7 +1433,9 @@ const AdminDashboard = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Description *</label>
+                <label className="block text-sm font-medium mb-1">
+                  Description *
+                </label>
                 <textarea
                   name="description"
                   className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -1408,7 +1466,9 @@ const AdminDashboard = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Location *</label>
+                <label className="block text-sm font-medium mb-1">
+                  Location *
+                </label>
                 <input
                   type="text"
                   name="location"
@@ -1419,7 +1479,9 @@ const AdminDashboard = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <label className="block text-sm font-medium mb-1">
+                  Image URL
+                </label>
                 <input
                   type="url"
                   name="imageUrl"
@@ -1432,7 +1494,9 @@ const AdminDashboard = () => {
                 <h4 className="font-medium mb-3">Event Timestamps</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Registration Start *</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Registration Start *
+                    </label>
                     <input
                       type="datetime-local"
                       name="registrationStart"
@@ -1441,7 +1505,9 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Registration End *</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Registration End *
+                    </label>
                     <input
                       type="datetime-local"
                       name="registrationEnd"
@@ -1450,7 +1516,9 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Event Start *</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Event Start *
+                    </label>
                     <input
                       type="datetime-local"
                       name="eventStart"
@@ -1459,7 +1527,9 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Event End *</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Event End *
+                    </label>
                     <input
                       type="datetime-local"
                       name="eventEnd"
