@@ -8,9 +8,10 @@ import socketConfig from "./config/socket.config.js"; // Import socket configura
 import userRoutes from "./routes/user.route.js";
 import eventRoutes from "./routes/event.route.js";
 import emailRoutes from "./routes/email.routes.js";
+import participantRoutes from "./routes/participant.routes.js";
 import cors from "cors";
 import  "./cronJobs/taskReminder.js"; // import and execute the cron job for sending task reminder emails at 8:00AM daily.
-   
+
 // Manually run the cron job for testing when server will start corn job function will call
 
 /* import checkOverdueTasks from "./cronJobs/taskReminder.js";
@@ -49,6 +50,7 @@ socketConfig(server);
 app.use("/api/user", userRoutes); // user routes
 app.use("/api/event", eventRoutes); // event route
 app.use("/api/email", emailRoutes); // email route
+app.use("/api/participant", participantRoutes);  // participant route
 
 app.get("/", (req, res) => {
   res.send("API is running...");

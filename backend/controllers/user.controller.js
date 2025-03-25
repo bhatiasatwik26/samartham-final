@@ -113,3 +113,20 @@ export const updateTaskStatus = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+export const getAllVolunteers = async (req, res) => {
+  try {
+      // Fetch users who have volunteered at least once
+      const volunteers = await User.find({ eventsVolunteered: { $gt: 0 } });
+
+      if (volunteers.length === 0) {
+          return res.status(404).json({ message: "No volunteers found." });
+      }
+
+      res.status(200).json(volunteers);
+  } catch (error) {
+      console.error("Error fetching volunteers:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+};
