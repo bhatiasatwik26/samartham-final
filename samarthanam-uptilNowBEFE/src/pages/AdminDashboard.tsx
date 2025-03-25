@@ -19,6 +19,7 @@ import {
   Sun,
   X,
   Loader2,
+  MapPin,
 } from "lucide-react";
 import { events } from "@/data/events"; // Import events from data file
 import adminApi, {
@@ -88,6 +89,9 @@ const AdminDashboard = () => {
     role: "Administrator",
     isLoading: true,
   });
+
+  // Local events state
+  const [localEvents, setLocalEvents] = useState(events);
 
   // Search and filter volunteers
   const filteredVolunteers = volunteers.filter((volunteer) => {
@@ -212,11 +216,6 @@ const AdminDashboard = () => {
     { icon: <Home size={20} />, label: "Dashboard", section: "dashboard" },
     { icon: <Users size={20} />, label: "Volunteers", section: "volunteers" },
     { icon: <Calendar size={20} />, label: "Events", section: "events" },
-    {
-      icon: <MessageSquare size={20} />,
-      label: "Messages",
-      section: "messages",
-    },
     { icon: <BarChart3 size={20} />, label: "Reports", section: "reports" },
     { icon: <Settings size={20} />, label: "Settings", section: "settings" },
   ];
@@ -514,14 +513,12 @@ const AdminDashboard = () => {
               onClick={() => {
                 if (isLoading.createEvent) return;
                 setIsLoading((prev) => ({ ...prev, createEvent: true }));
-                setTimeout(() => {
-                  setIsCreateEventModalOpen(true);
-                  setIsLoading((prev) => ({ ...prev, createEvent: false }));
-                  toast({
-                    title: "Create Event",
-                    description: "Opening event creation form",
-                  });
-                }, 300);
+                setIsCreateEventModalOpen(true);
+                setIsLoading((prev) => ({ ...prev, createEvent: false }));
+                toast({
+                  title: "Create Event",
+                  description: "Opening event creation form",
+                });
               }}
               disabled={isLoading.createEvent}
               className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 p-4 rounded-xl transition-all duration-200 hover:shadow-md group h-24 relative overflow-hidden"
@@ -1134,14 +1131,8 @@ const AdminDashboard = () => {
             onClick={() => {
               // Export events data as CSV
               const headers = "Title,Date,Location,Status\n";
-              const csvContent = events.reduce((acc, event) => {
-                // Determine event status based on date (since the events from data/events.ts doesn't have status)
-                const eventDate = new Date(event.date.split("-")[0]);
-                const status = eventDate < new Date() ? "active" : "upcoming";
-                return (
-                  acc +
-                  `"${event.title}","${event.date}","${event.location}","${status}"\n`
-                );
+              const csvContent = localEvents.reduce((acc: string, event) => {
+                return acc + `"${event.title}","${event.date}","${event.location}","${event.status}"\n`;
               }, headers);
 
               const blob = new Blob([csvContent], {
@@ -1165,13 +1156,6 @@ const AdminDashboard = () => {
             <FileText size={16} />
             <span>Export</span>
           </button>
-          <Link
-            to="/events"
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
-          >
-            <Eye size={16} />
-            <span>Explore Events</span>
-          </Link>
           <button
             onClick={() => setIsCreateEventModalOpen(true)}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg"
@@ -1183,10 +1167,10 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
+        {localEvents.map((event) => (
           <div
             key={event.id}
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300"
           >
             <div className="relative">
               <img
@@ -1199,154 +1183,54 @@ const AdminDashboard = () => {
                 }}
               />
               <div className="absolute top-2 right-2">
-                {/* Set status based on date */}
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    new Date(event.date.split("-")[0]) < new Date()
+                    event.status === "active"
                       ? "bg-green-100 text-green-800"
                       : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {new Date(event.date.split("-")[0]) < new Date()
-                    ? "Active"
-                    : "Upcoming"}
+                  {event.status || "Active"}
                 </span>
               </div>
             </div>
             <div className="p-4 flex-grow">
               <h3 className="text-lg font-semibold mb-2">{event.title}</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                {event.date} • {event.location}
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                <Calendar size={14} />
+                <span>{event.date}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <MapPin size={14} />
+                <span>{event.location}</span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">
+                {event.description}
               </p>
 
-              <div className="flex justify-between mt-auto pt-4">
+              <div className="mt-auto space-y-2">
                 <button
                   onClick={() => {
-                    // Placeholder for edit action
-                    toast({
-                      title: "Edit Event",
-                      description: `Opening edit form for event: ${event.title}`,
-                    });
+                    if (window.confirm('Are you sure you want to delete this event?')) {
+                      setLocalEvents(prevEvents => prevEvents.filter(e => e.id !== event.id));
+                      toast.success('Event deleted successfully');
+                    }
                   }}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+                  className="w-full px-4 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors duration-200"
                 >
-                  Edit
+                  Delete Event
                 </button>
                 <button
-                  onClick={() => navigate(`/events/${event.id}`)}
-                  className="px-3 py-1 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded"
+                  onClick={() => navigate(`/manage-event/${event.id}`)}
+                  className="w-full px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg transition-colors duration-200"
                 >
-                  View
+                  Manage Event
                 </button>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Event Create Modal */}
-      {isCreateEventModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white dark:bg-gray-800 z-10">
-              <h3 className="text-lg font-semibold">Create New Event</h3>
-              <button
-                onClick={() => setIsCreateEventModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                // Placeholder for event creation
-                toast({
-                  title: "Success",
-                  description: "New event created successfully",
-                });
-                setIsCreateEventModalOpen(false);
-              }}
-              className="p-4"
-            >
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Event Title
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="Enter event title"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="Enter event description"
-                    rows={3}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Date</label>
-                  <input
-                    type="date"
-                    className="w-full p-2 border rounded-lg"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="Enter event location"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Image URL
-                  </label>
-                  <input
-                    type="url"
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="Enter image URL"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end mt-6 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateEventModalOpen(false)}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg"
-                >
-                  Create Event
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 
@@ -1372,13 +1256,6 @@ const AdminDashboard = () => {
         return renderVolunteers();
       case "events":
         return renderEvents();
-      case "messages":
-        return (
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Messages</h2>
-            <p className="text-gray-500">Message system coming soon.</p>
-          </div>
-        );
       case "reports":
         return renderReports();
       case "settings":
@@ -1395,6 +1272,225 @@ const AdminDashboard = () => {
 
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Event Create Modal Component
+  const EventCreateModal = () => {
+    if (!isCreateEventModalOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white dark:bg-gray-800 z-10">
+            <h3 className="text-lg font-semibold">Create New Event</h3>
+            <button
+              onClick={() => setIsCreateEventModalOpen(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const formData = new FormData(e.currentTarget);
+                const eventData = {
+                  name: formData.get('name'),
+                  description: formData.get('description'),
+                  date: formData.get('date'),
+                  time: formData.get('time'),
+                  location: formData.get('location'),
+                  imageUrl: formData.get('imageUrl') || '',
+                  category: formData.get('category'),
+                  timestamps: {
+                    registrationStart: formData.get('registrationStart'),
+                    registrationEnd: formData.get('registrationEnd'),
+                    eventStart: formData.get('eventStart'),
+                    eventEnd: formData.get('eventEnd')
+                  }
+                };
+
+                console.log('Event Data to be sent:', eventData);
+
+                // For now, we'll simulate a successful response
+                // Later this will be replaced with actual backend call
+                const mockResponse = {
+                  success: true,
+                  id: 'event-' + Date.now(),
+                  ...eventData
+                };
+
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Handle success
+                toast({
+                  title: "Success",
+                  description: "New event created successfully",
+                });
+
+                // Close the modal
+                setIsCreateEventModalOpen(false);
+
+                // Optional: Update local state or refresh events list
+                // This part will be implemented when backend is ready
+
+              } catch (error) {
+                console.error('Error in event creation:', error);
+                toast({
+                  title: "Error",
+                  description: error instanceof Error ? error.message : "Failed to create event. Please try again.",
+                  variant: "destructive"
+                });
+              }
+            }}
+            className="p-6 space-y-6"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">Event Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  placeholder="Enter event name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Category *</label>
+                <select
+                  name="category"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  required
+                >
+                  <option value="">Select category</option>
+                  <option value="Food Drive">Food Drive</option>
+                  <option value="Beach Cleanup">Beach Cleanup</option>
+                  <option value="Education Workshop">Education Workshop</option>
+                  <option value="Health Camp">Health Camp</option>
+                  <option value="Sports Event">Sports Event</option>
+                  <option value="Cultural Event">Cultural Event</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <textarea
+                  name="description"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  placeholder="Enter event description"
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Date *</label>
+                <input
+                  type="date"
+                  name="date"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Time *</label>
+                <input
+                  type="time"
+                  name="time"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">Location *</label>
+                <input
+                  type="text"
+                  name="location"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  placeholder="Enter event location"
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <input
+                  type="url"
+                  name="imageUrl"
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  placeholder="Enter image URL"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <h4 className="font-medium mb-3">Event Timestamps</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Registration Start *</label>
+                    <input
+                      type="datetime-local"
+                      name="registrationStart"
+                      className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Registration End *</label>
+                    <input
+                      type="datetime-local"
+                      name="registrationEnd"
+                      className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Event Start *</label>
+                    <input
+                      type="datetime-local"
+                      name="eventStart"
+                      className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Event End *</label>
+                    <input
+                      type="datetime-local"
+                      name="eventEnd"
+                      className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => setIsCreateEventModalOpen(false)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Create Event
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div
@@ -1563,7 +1659,7 @@ const AdminDashboard = () => {
                     ))}
                     <li>
                       <button
-                        className="w-full flex items-center px-4 py-3 text-red-600 dark:text-red-400 rounded-lg"
+                        className="w-full flex items-center px-4 py-3 rounded-lg"
                         onClick={() => {
                           navigate("/");
                           toast({
@@ -1676,6 +1772,9 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Event Create Modal */}
+        <EventCreateModal />
       </div>
     </div>
   );

@@ -46,33 +46,35 @@ const EventBarChart: React.FC<EventBarChartProps> = ({ data, className }) => {
                 bottom: 60,
               }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
               <XAxis
                 dataKey="name"
                 angle={-45}
                 textAnchor="end"
                 height={80}
                 tick={{ fontSize: 12 }}
+                stroke="#ef4444"
               />
-              <YAxis />
+              <YAxis stroke="#ef4444" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "white",
                   borderRadius: "8px",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                  border: "1px solid #f3f4f6",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.1)",
+                  border: "1px solid #fca5a5",
                 }}
+                cursor={{ fill: "#fee2e2", opacity: 0.2 }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ color: "#ef4444" }} />
               <Bar
                 dataKey="Volunteers"
-                fill="hsl(var(--primary))"
+                fill="#ef4444"
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
               />
               <Bar
                 dataKey="Participants"
-                fill="hsl(var(--muted-foreground))"
+                fill="#fca5a5"
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
               />

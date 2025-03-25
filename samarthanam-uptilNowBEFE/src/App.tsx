@@ -14,6 +14,7 @@ import LeaderboardPage from "./pages/LeaderboardPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import ManageEvent from "./pages/ManageEvent";
 // Import our custom pages
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -39,6 +40,7 @@ const App = () => {
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/manage-event/:eventId" element={<ManageEvent />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/help" element={<Help />} />
@@ -47,6 +49,7 @@ const App = () => {
         <Route path="/participant-login" element={<ParticipantLogin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Toaster />
     </TooltipProvider>
   );
 };
