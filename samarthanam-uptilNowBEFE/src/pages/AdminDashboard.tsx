@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
@@ -18,17 +18,18 @@ import {
   Moon,
   Sun,
   X,
-  Loader2
-} from 'lucide-react';
-import { events } from '@/data/events'; // Import events from data file
-import adminApi, { 
-  DashboardStats, 
-  RecentActivity, 
-  EventProgress, 
-  Volunteer, 
-  VolunteerOverview 
-} from '@/services/adminApi';
+  Loader2,
+} from "lucide-react";
+import { events } from "@/data/events"; // Import events from data file
+import adminApi, {
+  DashboardStats,
+  RecentActivity,
+  EventProgress,
+  Volunteer,
+  VolunteerOverview,
+} from "@/services/adminApi";
 import { useToast } from "@/components/ui/use-toast";
+import ReportCharts from "@/components/ReportCharts";
 
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -41,14 +42,14 @@ const AdminDashboard = () => {
   const [currentVolunteer, setCurrentVolunteer] = useState<any>(null);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [newVolunteer, setNewVolunteer] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    interests: '',
-    status: 'active'
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    interests: "",
+    status: "active",
   });
-  
+
   // API data states
   const [isLoading, setIsLoading] = useState({
     stats: false,
@@ -60,44 +61,48 @@ const AdminDashboard = () => {
     addVolunteer: false,
     createEvent: false,
     generateReport: false,
-    sendNotification: false
+    sendNotification: false,
   });
   const [stats, setStats] = useState<DashboardStats>({
     volunteerCount: 0,
     eventCount: 0,
     activeEventCount: 0,
-    completedTaskCount: 0
+    completedTaskCount: 0,
   });
   const [activities, setActivities] = useState<RecentActivity[]>([]);
   const [eventProgress, setEventProgress] = useState<EventProgress[]>([]);
-  const [volunteerOverview, setVolunteerOverview] = useState<VolunteerOverview>({
-    activeVolunteers: 0,
-    newVolunteers: 0,
-    pendingApprovals: 0
-  });
+  const [volunteerOverview, setVolunteerOverview] = useState<VolunteerOverview>(
+    {
+      activeVolunteers: 0,
+      newVolunteers: 0,
+      pendingApprovals: 0,
+    }
+  );
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   // Add admin info to state
   const [adminInfo, setAdminInfo] = useState({
     name: "Admin Dashboard",
     role: "Administrator",
-    isLoading: true
+    isLoading: true,
   });
 
   // Search and filter volunteers
-  const filteredVolunteers = volunteers.filter(volunteer => {
-    const matchesSearch = volunteer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          volunteer.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === '' || volunteer.status === statusFilter;
+  const filteredVolunteers = volunteers.filter((volunteer) => {
+    const matchesSearch =
+      volunteer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      volunteer.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "" || volunteer.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   // Fetch dashboard data from API
   const fetchDashboardData = async () => {
     // Fetch stats
-    setIsLoading(prev => ({ ...prev, stats: true }));
+    setIsLoading((prev) => ({ ...prev, stats: true }));
     try {
       const statsData = await adminApi.getDashboardStats();
       setStats(statsData);
@@ -106,49 +111,49 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to load dashboard statistics",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(prev => ({ ...prev, stats: false }));
+      setIsLoading((prev) => ({ ...prev, stats: false }));
     }
-    
+
     // Fetch recent activities
-    setIsLoading(prev => ({ ...prev, activities: true }));
+    setIsLoading((prev) => ({ ...prev, activities: true }));
     try {
       const activitiesData = await adminApi.getRecentActivities();
       setActivities(activitiesData);
     } catch (error) {
       console.error("Error fetching activities:", error);
     } finally {
-      setIsLoading(prev => ({ ...prev, activities: false }));
+      setIsLoading((prev) => ({ ...prev, activities: false }));
     }
-    
+
     // Fetch event progress
-    setIsLoading(prev => ({ ...prev, eventProgress: true }));
+    setIsLoading((prev) => ({ ...prev, eventProgress: true }));
     try {
       const progressData = await adminApi.getEventProgress();
       setEventProgress(progressData);
     } catch (error) {
       console.error("Error fetching event progress:", error);
     } finally {
-      setIsLoading(prev => ({ ...prev, eventProgress: false }));
+      setIsLoading((prev) => ({ ...prev, eventProgress: false }));
     }
-    
+
     // Fetch volunteer overview
-    setIsLoading(prev => ({ ...prev, volunteerOverview: true }));
+    setIsLoading((prev) => ({ ...prev, volunteerOverview: true }));
     try {
       const overviewData = await adminApi.getVolunteerOverview();
       setVolunteerOverview(overviewData);
     } catch (error) {
       console.error("Error fetching volunteer overview:", error);
     } finally {
-      setIsLoading(prev => ({ ...prev, volunteerOverview: false }));
+      setIsLoading((prev) => ({ ...prev, volunteerOverview: false }));
     }
   };
-  
+
   // Fetch volunteers
   const fetchVolunteers = async () => {
-    setIsLoading(prev => ({ ...prev, volunteers: true }));
+    setIsLoading((prev) => ({ ...prev, volunteers: true }));
     try {
       const volunteersData = await adminApi.getVolunteers();
       setVolunteers(volunteersData);
@@ -157,29 +162,29 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to load volunteers data",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(prev => ({ ...prev, volunteers: false }));
+      setIsLoading((prev) => ({ ...prev, volunteers: false }));
     }
   };
-  
+
   // Add function to fetch admin info
   const fetchAdminInfo = async () => {
     try {
-      setAdminInfo(prev => ({ ...prev, isLoading: true }));
+      setAdminInfo((prev) => ({ ...prev, isLoading: true }));
       // Attempt to get admin data from backend
       // For now we'll use fallback data since we're connecting to mock API
       setTimeout(() => {
         setAdminInfo({
           name: "Admin Dashboard",
           role: "Administrator",
-          isLoading: false
+          isLoading: false,
         });
       }, 1000);
     } catch (error) {
       console.error("Error fetching admin info:", error);
-      setAdminInfo(prev => ({ ...prev, isLoading: false }));
+      setAdminInfo((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -196,9 +201,9 @@ const AdminDashboard = () => {
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
     if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   };
 
@@ -207,16 +212,24 @@ const AdminDashboard = () => {
     { icon: <Home size={20} />, label: "Dashboard", section: "dashboard" },
     { icon: <Users size={20} />, label: "Volunteers", section: "volunteers" },
     { icon: <Calendar size={20} />, label: "Events", section: "events" },
-    { icon: <MessageSquare size={20} />, label: "Messages", section: "messages" },
+    {
+      icon: <MessageSquare size={20} />,
+      label: "Messages",
+      section: "messages",
+    },
     { icon: <BarChart3 size={20} />, label: "Reports", section: "reports" },
     { icon: <Settings size={20} />, label: "Settings", section: "settings" },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setNewVolunteer(prev => ({
+    setNewVolunteer((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -225,18 +238,18 @@ const AdminDashboard = () => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) {
-      return 'just now';
+      return "just now";
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      return `${hours} hour${hours > 1 ? "s" : ""} ago`;
     } else if (diffInSeconds < 604800) {
       const days = Math.floor(diffInSeconds / 86400);
-      return `${days} day${days > 1 ? 's' : ''} ago`;
+      return `${days} day${days > 1 ? "s" : ""} ago`;
     } else {
       return date.toLocaleDateString();
     }
@@ -245,7 +258,7 @@ const AdminDashboard = () => {
   // Handle adding a new volunteer
   const handleAddVolunteer = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const volunteer = {
         name: newVolunteer.name,
@@ -254,31 +267,31 @@ const AdminDashboard = () => {
         address: newVolunteer.address,
         interests: newVolunteer.interests,
         events: [],
-        joined: new Date().toISOString().split('T')[0],
-        status: newVolunteer.status as 'active' | 'inactive'
+        joined: new Date().toISOString().split("T")[0],
+        status: newVolunteer.status as "active" | "inactive",
       };
-      
+
       // Call API to add volunteer
       await adminApi.addVolunteer(volunteer);
-      
+
       // Refresh volunteer list
       fetchVolunteers();
-      
+
       // Show success toast
       toast({
         title: "Success",
         description: "Volunteer added successfully",
-        variant: "default"
+        variant: "default",
       });
-      
+
       // Reset form and close modal
       setNewVolunteer({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        interests: '',
-        status: 'active'
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        interests: "",
+        status: "active",
       });
       setIsAddVolunteerModalOpen(false);
     } catch (error) {
@@ -286,7 +299,7 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to add volunteer",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -300,7 +313,7 @@ const AdminDashboard = () => {
     "Community Health Camp",
     "Tree Planting",
     "Children's Art Program",
-    "Senior Citizens Outreach"
+    "Senior Citizens Outreach",
   ];
 
   const openEditEventsModal = (volunteer: any) => {
@@ -311,7 +324,7 @@ const AdminDashboard = () => {
 
   const handleEventSelectionChange = (event: string) => {
     if (selectedEvents.includes(event)) {
-      setSelectedEvents(selectedEvents.filter(e => e !== event));
+      setSelectedEvents(selectedEvents.filter((e) => e !== event));
     } else {
       setSelectedEvents([...selectedEvents, event]);
     }
@@ -320,25 +333,25 @@ const AdminDashboard = () => {
   // Handle saving volunteer events
   const saveVolunteerEvents = async () => {
     if (!currentVolunteer) return;
-    
+
     try {
       // Call API to update volunteer events
       await adminApi.updateVolunteerEvents(currentVolunteer.id, selectedEvents);
-      
+
       // Update local state to reflect changes
-      setVolunteers(volunteers.map(v => 
-        v.id === currentVolunteer.id 
-          ? { ...v, events: selectedEvents } 
-          : v
-      ));
-      
+      setVolunteers(
+        volunteers.map((v) =>
+          v.id === currentVolunteer.id ? { ...v, events: selectedEvents } : v
+        )
+      );
+
       // Show success toast
       toast({
         title: "Success",
         description: "Volunteer events updated successfully",
-        variant: "default"
+        variant: "default",
       });
-      
+
       // Close modal
       setIsEditEventsModalOpen(false);
     } catch (error) {
@@ -346,7 +359,7 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to update volunteer events",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -365,7 +378,7 @@ const AdminDashboard = () => {
           <h3 className="font-semibold">Total Volunteers</h3>
           <p className="text-2xl font-bold">{stats.volunteerCount}</p>
         </div>
-        
+
         <div className="bg-green-100 dark:bg-green-900/20 p-4 rounded-lg relative overflow-hidden">
           {isLoading.stats && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50">
@@ -375,7 +388,7 @@ const AdminDashboard = () => {
           <h3 className="font-semibold">Total Events</h3>
           <p className="text-2xl font-bold">{stats.eventCount}</p>
         </div>
-        
+
         <div className="bg-purple-100 dark:bg-purple-900/20 p-4 rounded-lg relative overflow-hidden">
           {isLoading.stats && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50">
@@ -385,7 +398,7 @@ const AdminDashboard = () => {
           <h3 className="font-semibold">Active Events</h3>
           <p className="text-2xl font-bold">{stats.activeEventCount}</p>
         </div>
-        
+
         <div className="bg-yellow-100 dark:bg-yellow-900/20 p-4 rounded-lg relative overflow-hidden">
           {isLoading.stats && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50">
@@ -396,7 +409,7 @@ const AdminDashboard = () => {
           <p className="text-2xl font-bold">{stats.completedTaskCount}</p>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Recent Activity */}
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden">
@@ -411,8 +424,12 @@ const AdminDashboard = () => {
               activities.map((activity) => (
                 <div key={activity.id}>
                   <p className="font-medium">{activity.title}</p>
-                  <p className="text-sm text-gray-500">{activity.description}</p>
-                  <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(activity.timestamp)}</p>
+                  <p className="text-sm text-gray-500">
+                    {activity.description}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {formatRelativeTime(activity.timestamp)}
+                  </p>
                 </div>
               ))
             ) : (
@@ -420,7 +437,7 @@ const AdminDashboard = () => {
             )}
           </div>
         </div>
-        
+
         {/* Event Progress */}
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden">
           {isLoading.eventProgress && (
@@ -435,11 +452,13 @@ const AdminDashboard = () => {
                 <div key={event.eventId}>
                   <div className="flex justify-between mb-1">
                     <p className="font-medium">{event.title}</p>
-                    <span className={`text-sm text-${event.color}-600`}>{event.progress}%</span>
+                    <span className={`text-sm text-${event.color}-600`}>
+                      {event.progress}%
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`bg-${event.color}-500 h-2 rounded-full`} 
+                    <div
+                      className={`bg-${event.color}-500 h-2 rounded-full`}
                       style={{ width: `${event.progress}%` }}
                     ></div>
                   </div>
@@ -455,16 +474,16 @@ const AdminDashboard = () => {
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button 
+            <button
               onClick={() => {
                 if (isLoading.addVolunteer) return;
-                setIsLoading(prev => ({ ...prev, addVolunteer: true }));
+                setIsLoading((prev) => ({ ...prev, addVolunteer: true }));
                 setTimeout(() => {
                   setIsAddVolunteerModalOpen(true);
-                  setIsLoading(prev => ({ ...prev, addVolunteer: false }));
+                  setIsLoading((prev) => ({ ...prev, addVolunteer: false }));
                   toast({
                     title: "Add Volunteer",
-                    description: "Opening volunteer registration form"
+                    description: "Opening volunteer registration form",
                   });
                 }, 300);
               }}
@@ -472,27 +491,35 @@ const AdminDashboard = () => {
               className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-4 rounded-xl transition-all duration-200 hover:shadow-md group h-24 relative overflow-hidden"
             >
               {isLoading.addVolunteer ? (
-                <Loader2 size={24} className="text-blue-600 dark:text-blue-400 animate-spin absolute" />
+                <Loader2
+                  size={24}
+                  className="text-blue-600 dark:text-blue-400 animate-spin absolute"
+                />
               ) : (
                 <>
                   <div className="bg-blue-100 dark:bg-blue-800/40 p-3 rounded-full group-hover:scale-110 transition-transform duration-200">
-                    <UserPlus size={20} className="text-blue-600 dark:text-blue-400" />
+                    <UserPlus
+                      size={20}
+                      className="text-blue-600 dark:text-blue-400"
+                    />
                   </div>
-                  <span className="font-medium text-center sm:text-left">Add Volunteer</span>
+                  <span className="font-medium text-center sm:text-left">
+                    Add Volunteer
+                  </span>
                 </>
               )}
             </button>
-            
-            <button 
+
+            <button
               onClick={() => {
                 if (isLoading.createEvent) return;
-                setIsLoading(prev => ({ ...prev, createEvent: true }));
+                setIsLoading((prev) => ({ ...prev, createEvent: true }));
                 setTimeout(() => {
                   setIsCreateEventModalOpen(true);
-                  setIsLoading(prev => ({ ...prev, createEvent: false }));
+                  setIsLoading((prev) => ({ ...prev, createEvent: false }));
                   toast({
                     title: "Create Event",
-                    description: "Opening event creation form"
+                    description: "Opening event creation form",
                   });
                 }, 300);
               }}
@@ -500,27 +527,35 @@ const AdminDashboard = () => {
               className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 p-4 rounded-xl transition-all duration-200 hover:shadow-md group h-24 relative overflow-hidden"
             >
               {isLoading.createEvent ? (
-                <Loader2 size={24} className="text-green-600 dark:text-green-400 animate-spin absolute" />
+                <Loader2
+                  size={24}
+                  className="text-green-600 dark:text-green-400 animate-spin absolute"
+                />
               ) : (
                 <>
                   <div className="bg-green-100 dark:bg-green-800/40 p-3 rounded-full group-hover:scale-110 transition-transform duration-200">
-                    <Calendar size={20} className="text-green-600 dark:text-green-400" />
+                    <Calendar
+                      size={20}
+                      className="text-green-600 dark:text-green-400"
+                    />
                   </div>
-                  <span className="font-medium text-center sm:text-left">Create Event</span>
+                  <span className="font-medium text-center sm:text-left">
+                    Create Event
+                  </span>
                 </>
               )}
             </button>
-            
-            <button 
+
+            <button
               onClick={() => {
                 if (isLoading.generateReport) return;
-                setIsLoading(prev => ({ ...prev, generateReport: true }));
+                setIsLoading((prev) => ({ ...prev, generateReport: true }));
                 setTimeout(() => {
                   setActiveSection("reports");
-                  setIsLoading(prev => ({ ...prev, generateReport: false }));
+                  setIsLoading((prev) => ({ ...prev, generateReport: false }));
                   toast({
                     title: "Generate Report",
-                    description: "Navigating to reports section"
+                    description: "Navigating to reports section",
                   });
                 }, 300);
               }}
@@ -528,27 +563,38 @@ const AdminDashboard = () => {
               className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-4 rounded-xl transition-all duration-200 hover:shadow-md group h-24 relative overflow-hidden"
             >
               {isLoading.generateReport ? (
-                <Loader2 size={24} className="text-purple-600 dark:text-purple-400 animate-spin absolute" />
+                <Loader2
+                  size={24}
+                  className="text-purple-600 dark:text-purple-400 animate-spin absolute"
+                />
               ) : (
                 <>
                   <div className="bg-purple-100 dark:bg-purple-800/40 p-3 rounded-full group-hover:scale-110 transition-transform duration-200">
-                    <FileText size={20} className="text-purple-600 dark:text-purple-400" />
+                    <FileText
+                      size={20}
+                      className="text-purple-600 dark:text-purple-400"
+                    />
                   </div>
-                  <span className="font-medium text-center sm:text-left">Generate Report</span>
+                  <span className="font-medium text-center sm:text-left">
+                    Generate Report
+                  </span>
                 </>
               )}
             </button>
-            
-            <button 
+
+            <button
               onClick={() => {
                 if (isLoading.sendNotification) return;
-                setIsLoading(prev => ({ ...prev, sendNotification: true }));
+                setIsLoading((prev) => ({ ...prev, sendNotification: true }));
                 setTimeout(() => {
                   setActiveSection("messages");
-                  setIsLoading(prev => ({ ...prev, sendNotification: false }));
+                  setIsLoading((prev) => ({
+                    ...prev,
+                    sendNotification: false,
+                  }));
                   toast({
                     title: "Send Notification",
-                    description: "Navigating to messaging section"
+                    description: "Navigating to messaging section",
                   });
                 }, 300);
               }}
@@ -556,13 +602,21 @@ const AdminDashboard = () => {
               className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-4 rounded-xl transition-all duration-200 hover:shadow-md group h-24 relative overflow-hidden"
             >
               {isLoading.sendNotification ? (
-                <Loader2 size={24} className="text-orange-600 dark:text-orange-400 animate-spin absolute" />
+                <Loader2
+                  size={24}
+                  className="text-orange-600 dark:text-orange-400 animate-spin absolute"
+                />
               ) : (
                 <>
                   <div className="bg-orange-100 dark:bg-orange-800/40 p-3 rounded-full group-hover:scale-110 transition-transform duration-200">
-                    <MessageSquare size={20} className="text-orange-600 dark:text-orange-400" />
+                    <MessageSquare
+                      size={20}
+                      className="text-orange-600 dark:text-orange-400"
+                    />
                   </div>
-                  <span className="font-medium text-center sm:text-left">Send Notification</span>
+                  <span className="font-medium text-center sm:text-left">
+                    Send Notification
+                  </span>
                 </>
               )}
             </button>
@@ -583,21 +637,27 @@ const AdminDashboard = () => {
                 <p className="font-medium">Active Volunteers</p>
                 <p className="text-sm text-gray-500">Currently participating</p>
               </div>
-              <p className="text-xl font-bold text-green-600">{volunteerOverview.activeVolunteers}</p>
+              <p className="text-xl font-bold text-green-600">
+                {volunteerOverview.activeVolunteers}
+              </p>
             </div>
             <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
               <div>
                 <p className="font-medium">New Volunteers</p>
                 <p className="text-sm text-gray-500">Joined this month</p>
               </div>
-              <p className="text-xl font-bold text-blue-600">{volunteerOverview.newVolunteers}</p>
+              <p className="text-xl font-bold text-blue-600">
+                {volunteerOverview.newVolunteers}
+              </p>
             </div>
             <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
               <div>
                 <p className="font-medium">Pending Approvals</p>
                 <p className="text-sm text-gray-500">Waiting for review</p>
               </div>
-              <p className="text-xl font-bold text-orange-600">{volunteerOverview.pendingApprovals}</p>
+              <p className="text-xl font-bold text-orange-600">
+                {volunteerOverview.pendingApprovals}
+              </p>
             </div>
           </div>
         </div>
@@ -607,7 +667,7 @@ const AdminDashboard = () => {
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between mb-4">
           <h3 className="text-lg font-semibold">Ongoing Events</h3>
-          <button 
+          <button
             onClick={() => setActiveSection("events")}
             className="text-sm text-blue-600 hover:underline"
           >
@@ -616,11 +676,14 @@ const AdminDashboard = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.slice(0, 3).map((event) => (
-            <div key={event.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col sm:flex-row">
+            <div
+              key={event.id}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col sm:flex-row"
+            >
               <div className="w-full sm:w-1/3">
-                <img 
-                  src={event.imageUrl} 
-                  alt={event.title} 
+                <img
+                  src={event.imageUrl}
+                  alt={event.title}
                   className="w-full h-40 sm:h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -630,13 +693,19 @@ const AdminDashboard = () => {
               </div>
               <div className="w-full sm:w-2/3 p-3">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-sm line-clamp-1">{event.title}</h3>
-                  <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">Active</span>
+                  <h3 className="font-medium text-sm line-clamp-1">
+                    {event.title}
+                  </h3>
+                  <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">
+                    Active
+                  </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{event.date}</p>
-                <p className="text-xs text-gray-500 mb-3 line-clamp-1">{event.location}</p>
+                <p className="text-xs text-gray-500 mb-3 line-clamp-1">
+                  {event.location}
+                </p>
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => navigate(`/events/${event.id}`)}
                     className="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded"
                   >
@@ -657,26 +726,31 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <h1 className="text-2xl font-bold">Volunteer Management</h1>
         <div className="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
-          <button 
+          <button
             onClick={() => {
               // Export volunteer data as CSV
               const headers = "Name,Email,Phone,Status,Joined\n";
               const csvContent = volunteers.reduce((acc, vol) => {
-                return acc + `${vol.name},"${vol.email}","${vol.phone}",${vol.status},${vol.joined}\n`;
+                return (
+                  acc +
+                  `${vol.name},"${vol.email}","${vol.phone}",${vol.status},${vol.joined}\n`
+                );
               }, headers);
-              
-              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+              const blob = new Blob([csvContent], {
+                type: "text/csv;charset=utf-8;",
+              });
               const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.setAttribute('href', url);
-              link.setAttribute('download', 'volunteers.csv');
+              const link = document.createElement("a");
+              link.setAttribute("href", url);
+              link.setAttribute("download", "volunteers.csv");
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
-              
+
               toast({
                 title: "Export Complete",
-                description: "Volunteers data downloaded as CSV"
+                description: "Volunteers data downloaded as CSV",
               });
             }}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg"
@@ -684,7 +758,7 @@ const AdminDashboard = () => {
             <FileText size={16} />
             <span>Export</span>
           </button>
-          <button 
+          <button
             className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg"
             onClick={() => setIsAddVolunteerModalOpen(true)}
           >
@@ -693,10 +767,13 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search volunteers..."
@@ -705,7 +782,7 @@ const AdminDashboard = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <select 
+        <select
           className="px-4 py-2 border rounded-lg w-full sm:w-auto"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -715,51 +792,74 @@ const AdminDashboard = () => {
           <option value="inactive">Inactive</option>
         </select>
       </div>
-      
+
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden">
         {isLoading.volunteers && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50 z-10">
             <div className="flex flex-col items-center">
               <Loader2 className="h-8 w-8 animate-spin text-red-600 mb-2" />
-              <p className="text-sm text-gray-600 dark:text-gray-300">Loading volunteers...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Loading volunteers...
+              </p>
             </div>
           </div>
         )}
-        
+
         <div className="overflow-x-auto">
           {filteredVolunteers.length > 0 ? (
             <table className="min-w-full">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Events</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Email
+                  </th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Events
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredVolunteers.map(volunteer => (
+                {filteredVolunteers.map((volunteer) => (
                   <tr key={volunteer.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{volunteer.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{volunteer.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {volunteer.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {volunteer.email}
+                    </td>
                     <td className="hidden md:table-cell px-6 py-4">
                       <div className="flex items-center">
                         <div className="max-w-[200px] overflow-hidden">
                           {volunteer.events.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {volunteer.events.map((event: string, index: number) => (
-                                <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-                                  {event}
-                                </span>
-                              ))}
+                              {volunteer.events.map(
+                                (event: string, index: number) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full whitespace-nowrap"
+                                  >
+                                    {event}
+                                  </span>
+                                )
+                              )}
                             </div>
                           ) : (
-                            <span className="text-gray-500 text-sm">No events assigned</span>
+                            <span className="text-gray-500 text-sm">
+                              No events assigned
+                            </span>
                           )}
                         </div>
-                        <button 
-                          className="ml-2 text-blue-600 hover:text-blue-800" 
+                        <button
+                          className="ml-2 text-blue-600 hover:text-blue-800"
                           onClick={() => openEditEventsModal(volunteer)}
                           title="Edit events"
                         >
@@ -768,15 +868,19 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        volunteer.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          volunteer.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
                         {volunteer.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button 
-                        className="p-1 text-gray-600 mr-1" 
+                      <button
+                        className="p-1 text-gray-600 mr-1"
                         onClick={() => {
                           // Set the current volunteer data and open edit modal
                           setCurrentVolunteer(volunteer);
@@ -786,14 +890,14 @@ const AdminDashboard = () => {
                             phone: volunteer.phone,
                             address: volunteer.address,
                             interests: volunteer.interests,
-                            status: volunteer.status
+                            status: volunteer.status,
                           });
                           setIsAddVolunteerModalOpen(true);
                         }}
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
+                      <button
                         className="p-1 text-gray-600"
                         onClick={() => {
                           navigate(`/admin/volunteers/${volunteer.id}`);
@@ -808,36 +912,45 @@ const AdminDashboard = () => {
             </table>
           ) : (
             <div className="p-8 text-center">
-              <p className="text-gray-500">No volunteers found matching your search criteria.</p>
+              <p className="text-gray-500">
+                No volunteers found matching your search criteria.
+              </p>
             </div>
           )}
         </div>
       </div>
-      
+
       {/* Mobile view for volunteers on small screens */}
       <div className="lg:hidden mt-4 space-y-4">
-        {filteredVolunteers.map(volunteer => (
-          <div key={volunteer.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        {filteredVolunteers.map((volunteer) => (
+          <div
+            key={volunteer.id}
+            className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+          >
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{volunteer.name}</h3>
                 <p className="text-sm text-gray-600">{volunteer.email}</p>
                 <div className="mt-2">
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                    volunteer.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span
+                    className={`inline-block px-2 py-1 rounded-full text-xs ${
+                      volunteer.status === "active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
                     {volunteer.status}
                   </span>
                 </div>
               </div>
               <div className="flex">
-                <button 
-                  className="p-2 text-gray-600" 
+                <button
+                  className="p-2 text-gray-600"
                   onClick={() => openEditEventsModal(volunteer)}
                 >
                   <Edit size={16} />
                 </button>
-                <button 
+                <button
                   className="p-2 text-gray-600"
                   onClick={() => {
                     navigate(`/admin/volunteers/${volunteer.id}`);
@@ -852,7 +965,10 @@ const AdminDashboard = () => {
               {volunteer.events.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
                   {volunteer.events.map((event, index) => (
-                    <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    <span
+                      key={index}
+                      className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
+                    >
                       {event}
                     </span>
                   ))}
@@ -864,26 +980,29 @@ const AdminDashboard = () => {
           </div>
         ))}
       </div>
-      
+
       {/* Add/Edit Volunteer Modal */}
       {isAddVolunteerModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto mx-auto" style={{ maxWidth: "90vw" }}>
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto mx-auto"
+            style={{ maxWidth: "90vw" }}
+          >
             <div className="flex justify-between items-center p-3 border-b sticky top-0 bg-white dark:bg-gray-800 z-10">
               <h3 className="text-lg font-semibold">
                 {currentVolunteer ? "Edit Volunteer" : "Add New Volunteer"}
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsAddVolunteerModalOpen(false);
                   setCurrentVolunteer(null);
                   setNewVolunteer({
-                    name: '',
-                    email: '',
-                    phone: '',
-                    address: '',
-                    interests: '',
-                    status: 'active'
+                    name: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                    interests: "",
+                    status: "active",
                   });
                 }}
                 className="text-gray-500 hover:text-gray-700"
@@ -891,7 +1010,7 @@ const AdminDashboard = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             <form onSubmit={handleAddVolunteer} className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
@@ -906,9 +1025,11 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
                     name="email"
@@ -919,9 +1040,11 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Phone
+                  </label>
                   <input
                     type="tel"
                     name="phone"
@@ -931,9 +1054,11 @@ const AdminDashboard = () => {
                     placeholder="Enter phone number"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Status
+                  </label>
                   <select
                     name="status"
                     value={newVolunteer.status}
@@ -944,9 +1069,11 @@ const AdminDashboard = () => {
                     <option value="inactive">Inactive</option>
                   </select>
                 </div>
-                
+
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Address</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Address
+                  </label>
                   <input
                     type="text"
                     name="address"
@@ -956,9 +1083,11 @@ const AdminDashboard = () => {
                     placeholder="Enter address"
                   />
                 </div>
-                
+
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Interests/Skills</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Interests/Skills
+                  </label>
                   <textarea
                     name="interests"
                     value={newVolunteer.interests}
@@ -969,7 +1098,7 @@ const AdminDashboard = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end mt-6 gap-2">
                 <button
                   type="button"
@@ -1001,29 +1130,34 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <h1 className="text-2xl font-bold">Event Management</h1>
         <div className="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
-          <button 
+          <button
             onClick={() => {
               // Export events data as CSV
               const headers = "Title,Date,Location,Status\n";
               const csvContent = events.reduce((acc, event) => {
                 // Determine event status based on date (since the events from data/events.ts doesn't have status)
-                const eventDate = new Date(event.date.split('-')[0]);
-                const status = eventDate < new Date() ? 'active' : 'upcoming';
-                return acc + `"${event.title}","${event.date}","${event.location}","${status}"\n`;
+                const eventDate = new Date(event.date.split("-")[0]);
+                const status = eventDate < new Date() ? "active" : "upcoming";
+                return (
+                  acc +
+                  `"${event.title}","${event.date}","${event.location}","${status}"\n`
+                );
               }, headers);
-              
-              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+              const blob = new Blob([csvContent], {
+                type: "text/csv;charset=utf-8;",
+              });
               const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.setAttribute('href', url);
-              link.setAttribute('download', 'events.csv');
+              const link = document.createElement("a");
+              link.setAttribute("href", url);
+              link.setAttribute("download", "events.csv");
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
-              
+
               toast({
                 title: "Export Complete",
-                description: "Events data downloaded as CSV"
+                description: "Events data downloaded as CSV",
               });
             }}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg"
@@ -1031,11 +1165,14 @@ const AdminDashboard = () => {
             <FileText size={16} />
             <span>Export</span>
           </button>
-          <Link to="/events" className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
+          <Link
+            to="/events"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
+          >
             <Eye size={16} />
             <span>Explore Events</span>
           </Link>
-          <button 
+          <button
             onClick={() => setIsCreateEventModalOpen(true)}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg"
           >
@@ -1044,15 +1181,18 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map((event) => (
-          <div key={event.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+          <div
+            key={event.id}
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
+          >
             <div className="relative">
-              <img 
-                src={event.imageUrl} 
-                alt={event.title} 
-                className="w-full h-48 object-cover" 
+              <img
+                src={event.imageUrl}
+                alt={event.title}
+                className="w-full h-48 object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "https://placehold.co/300x300?text=Event";
@@ -1060,33 +1200,39 @@ const AdminDashboard = () => {
               />
               <div className="absolute top-2 right-2">
                 {/* Set status based on date */}
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  new Date(event.date.split('-')[0]) < new Date() 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {new Date(event.date.split('-')[0]) < new Date() ? 'Active' : 'Upcoming'}
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    new Date(event.date.split("-")[0]) < new Date()
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {new Date(event.date.split("-")[0]) < new Date()
+                    ? "Active"
+                    : "Upcoming"}
                 </span>
               </div>
             </div>
             <div className="p-4 flex-grow">
               <h3 className="text-lg font-semibold mb-2">{event.title}</h3>
-              <p className="text-sm text-gray-500 mb-4">{event.date} • {event.location}</p>
-              
+              <p className="text-sm text-gray-500 mb-4">
+                {event.date} • {event.location}
+              </p>
+
               <div className="flex justify-between mt-auto pt-4">
-                <button 
+                <button
                   onClick={() => {
                     // Placeholder for edit action
                     toast({
                       title: "Edit Event",
-                      description: `Opening edit form for event: ${event.title}`
+                      description: `Opening edit form for event: ${event.title}`,
                     });
                   }}
                   className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
                 >
                   Edit
                 </button>
-                <button 
+                <button
                   onClick={() => navigate(`/events/${event.id}`)}
                   className="px-3 py-1 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded"
                 >
@@ -1097,36 +1243,38 @@ const AdminDashboard = () => {
           </div>
         ))}
       </div>
-      
+
       {/* Event Create Modal */}
       {isCreateEventModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white dark:bg-gray-800 z-10">
               <h3 className="text-lg font-semibold">Create New Event</h3>
-              <button 
+              <button
                 onClick={() => setIsCreateEventModalOpen(false)}
                 className="text-gray-500 hover:text-gray-700"
               >
                 <X size={20} />
               </button>
             </div>
-            
-            <form 
+
+            <form
               onSubmit={(e) => {
                 e.preventDefault();
                 // Placeholder for event creation
                 toast({
                   title: "Success",
-                  description: "New event created successfully"
+                  description: "New event created successfully",
                 });
                 setIsCreateEventModalOpen(false);
-              }} 
+              }}
               className="p-4"
             >
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Event Title</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Event Title
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
@@ -1134,9 +1282,11 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Description
+                  </label>
                   <textarea
                     className="w-full p-2 border rounded-lg"
                     placeholder="Enter event description"
@@ -1144,7 +1294,7 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Date</label>
                   <input
@@ -1153,9 +1303,11 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Location</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Location
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded-lg"
@@ -1163,9 +1315,11 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Image URL</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Image URL
+                  </label>
                   <input
                     type="url"
                     className="w-full p-2 border rounded-lg"
@@ -1173,7 +1327,7 @@ const AdminDashboard = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end mt-6 gap-2">
                 <button
                   type="button"
@@ -1196,6 +1350,19 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const dummyReports = [
+    { eventname: "Tech Meetup", volunteer: 35, participant: 120 },
+    { eventname: "Charity Run", volunteer: 50, participant: 200 },
+    { eventname: "Blood Donation Camp", volunteer: 40, participant: 150 },
+    { eventname: "Tree Plantation Drive", volunteer: 30, participant: 100 },
+    { eventname: "Coding Hackathon", volunteer: 45, participant: 180 },
+    { eventname: "Health Camp", volunteer: 25, participant: 90 },
+  ];
+
+  const renderReports = () => {
+    return <ReportCharts data={dummyReports} />;
+  };
+
   // Render content based on active section
   const renderContent = () => {
     switch (activeSection) {
@@ -1213,12 +1380,7 @@ const AdminDashboard = () => {
           </div>
         );
       case "reports":
-        return (
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Reports</h2>
-            <p className="text-gray-500">Reporting system coming soon.</p>
-          </div>
-        );
+        return renderReports();
       case "settings":
         return (
           <div className="p-8 text-center">
@@ -1235,21 +1397,28 @@ const AdminDashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className={`min-h-screen relative ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+    <div
+      className={`min-h-screen relative ${
+        isDarkMode ? "dark bg-gray-900" : "bg-gray-50"
+      }`}
+    >
       <Header isAdmin={true} />
-      
+
       <div className="flex flex-col min-h-screen">
         <div className="flex-1 pt-16 bg-gradient-to-br from-red-50 to-white dark:from-gray-900 dark:to-gray-800">
           {/* Background Pattern */}
           <div className="absolute inset-0 z-0 opacity-40 dark:opacity-20">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ef4444' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-              backgroundSize: '60px 60px'
-            }}></div>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ef4444' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                backgroundSize: "60px 60px",
+              }}
+            ></div>
           </div>
 
           {/* Mobile menu button */}
-          <button 
+          <button
             className="lg:hidden fixed bottom-6 right-6 z-50 bg-red-600 text-white p-3 rounded-full shadow-lg"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -1259,11 +1428,15 @@ const AdminDashboard = () => {
           {/* Sidebar - Desktop */}
           <div className="hidden lg:block w-72 bg-gradient-to-b from-red-100 via-red-50 to-red-100 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-800 backdrop-blur-md fixed top-0 bottom-0 left-0 shadow-xl border-r border-red-200 dark:border-gray-700 z-20 overflow-y-auto">
             <div className="p-4 border-b border-red-200 dark:border-gray-700">
-              <Link to="/" className="flex items-center justify-center mb-6" aria-label="Samarthanam NGO Home">
+              <Link
+                to="/"
+                className="flex items-center justify-center mb-6"
+                aria-label="Samarthanam NGO Home"
+              >
                 <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg overflow-hidden w-full max-w-[200px]">
-                  <img 
-                    src="/images/logo_for_site.jpg" 
-                    alt="Samarthanam NGO" 
+                  <img
+                    src="/images/logo_for_site.jpg"
+                    alt="Samarthanam NGO"
                     className="h-24 w-auto mx-auto rounded-md"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -1290,22 +1463,26 @@ const AdminDashboard = () => {
                     <button
                       className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-300 group ${
                         activeSection === item.section
-                          ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 scale-105'
-                          : 'hover:bg-white dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 hover:scale-105 hover:shadow-md'
+                          ? "bg-red-600 text-white shadow-lg shadow-red-600/30 scale-105"
+                          : "hover:bg-white dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 hover:scale-105 hover:shadow-md"
                       }`}
                       onClick={() => setActiveSection(item.section)}
                     >
-                      <span className={`mr-3 transition-transform duration-300 ${
-                        activeSection === item.section 
-                          ? 'scale-110' 
-                          : 'group-hover:scale-110 group-hover:text-red-600 dark:group-hover:text-red-400'
-                      }`}>
+                      <span
+                        className={`mr-3 transition-transform duration-300 ${
+                          activeSection === item.section
+                            ? "scale-110"
+                            : "group-hover:scale-110 group-hover:text-red-600 dark:group-hover:text-red-400"
+                        }`}
+                      >
                         {item.icon}
                       </span>
-                      <span className={`font-medium transition-colors duration-300 ${
-                        activeSection !== item.section &&
-                        'group-hover:text-red-600 dark:group-hover:text-red-400'
-                      }`}>
+                      <span
+                        className={`font-medium transition-colors duration-300 ${
+                          activeSection !== item.section &&
+                          "group-hover:text-red-600 dark:group-hover:text-red-400"
+                        }`}
+                      >
                         {item.label}
                       </span>
                     </button>
@@ -1314,17 +1491,20 @@ const AdminDashboard = () => {
               </ul>
             </nav>
             <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-red-200 dark:border-gray-700 bg-gradient-to-b from-red-100 to-red-50 dark:from-gray-800 dark:to-gray-800 backdrop-blur-md">
-              <button 
+              <button
                 className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-white dark:text-red-400 dark:hover:bg-gray-700/60 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-md group"
                 onClick={() => {
-                  navigate('/');
+                  navigate("/");
                   toast({
                     title: "Logged Out",
-                    description: "You have been logged out successfully"
+                    description: "You have been logged out successfully",
                   });
                 }}
               >
-                <LogOut size={20} className="mr-3 transition-transform duration-300 group-hover:scale-110" />
+                <LogOut
+                  size={20}
+                  className="mr-3 transition-transform duration-300 group-hover:scale-110"
+                />
                 <span className="font-medium">Logout</span>
               </button>
               <div className="mt-4 flex justify-center">
@@ -1347,7 +1527,10 @@ const AdminDashboard = () => {
                   <h2 className="font-bold text-xl">
                     {adminInfo.isLoading ? (
                       <div className="flex items-center gap-2">
-                        <Loader2 size={18} className="animate-spin text-red-600" />
+                        <Loader2
+                          size={18}
+                          className="animate-spin text-red-600"
+                        />
                         <span>Loading...</span>
                       </div>
                     ) : (
@@ -1365,8 +1548,8 @@ const AdminDashboard = () => {
                         <button
                           className={`w-full flex items-center px-4 py-3 rounded-lg ${
                             activeSection === item.section
-                              ? 'bg-red-600 text-white'
-                              : 'text-gray-700 dark:text-gray-200'
+                              ? "bg-red-600 text-white"
+                              : "text-gray-700 dark:text-gray-200"
                           }`}
                           onClick={() => {
                             setActiveSection(item.section);
@@ -1379,13 +1562,14 @@ const AdminDashboard = () => {
                       </li>
                     ))}
                     <li>
-                      <button 
+                      <button
                         className="w-full flex items-center px-4 py-3 text-red-600 dark:text-red-400 rounded-lg"
                         onClick={() => {
-                          navigate('/');
+                          navigate("/");
                           toast({
                             title: "Logged Out",
-                            description: "You have been logged out successfully"
+                            description:
+                              "You have been logged out successfully",
                           });
                         }}
                       >
@@ -1421,7 +1605,9 @@ const AdminDashboard = () => {
           {/* Main content */}
           <div className="lg:ml-72 p-4 md:p-8 relative z-10">
             <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-4 md:p-6 mb-6">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Dashboard Overview</h1>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+                Dashboard Overview
+              </h1>
               {renderContent()}
             </div>
           </div>
@@ -1439,18 +1625,22 @@ const AdminDashboard = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white dark:bg-gray-800 z-10">
-                <h3 className="text-lg font-semibold">Edit Events for {currentVolunteer.name}</h3>
-                <button 
+                <h3 className="text-lg font-semibold">
+                  Edit Events for {currentVolunteer.name}
+                </h3>
+                <button
                   onClick={() => setIsEditEventsModalOpen(false)}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   <X size={20} />
                 </button>
               </div>
-              
+
               <div className="p-4">
-                <p className="text-sm text-gray-500 mb-4">Select the events this volunteer is participating in:</p>
-                
+                <p className="text-sm text-gray-500 mb-4">
+                  Select the events this volunteer is participating in:
+                </p>
+
                 <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
                   {availableEvents.map((event, index) => (
                     <div key={index} className="flex items-center">
@@ -1461,11 +1651,13 @@ const AdminDashboard = () => {
                         onChange={() => handleEventSelectionChange(event)}
                         className="mr-2 h-4 w-4"
                       />
-                      <label htmlFor={`event-${index}`} className="text-sm">{event}</label>
+                      <label htmlFor={`event-${index}`} className="text-sm">
+                        {event}
+                      </label>
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={() => setIsEditEventsModalOpen(false)}
@@ -1489,4 +1681,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
