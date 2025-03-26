@@ -130,3 +130,32 @@ export const getAllVolunteers = async (req, res) => {
       res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// Register a Volunteer
+export const registerVolunteer = async (req, res) => {
+  try {
+      const { email, name, interestedCategories, interestedTasks, skills, availability } = req.body;
+
+      // Check if the user already exists
+      let user = await User.findOne({ email });
+
+      if (user) {
+          return res.status(400).json({ message: "User already registered as a volunteer!" });
+      }
+
+      // Create a new user with volunteer role
+      user = new User({
+          email,
+          name,
+          interestedCategories,
+          interestedTasks,
+          skills,
+          availability,
+      });
+
+      await user.save();
+      res.status(201).json({ message: "Volunteer registered successfully!", user });
+  } catch (error) {
+      res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};

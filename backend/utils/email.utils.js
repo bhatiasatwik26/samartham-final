@@ -25,6 +25,11 @@ const emailTemplates = {
         text: `Hello ${name},\n\nYour task "${task}" is due by ${deadline}. Please complete it on time.\n\nBest,\nEvent Team`,
         html: `<h3>Hello ${name},</h3><p>Your task <b>"${task}"</b> is due by <b>${deadline}</b>. Please complete it on time.</p><p>Best,<br>Event Team</p>`,
     }),
+    taskAssigned: ({ name, task, eventName, deadline }) => ({
+        subject: "New Task Assigned!",
+        text: `Hello ${name},\n\nYou have been assigned a new task: "${task}" for the event "${eventName}".\n\nDeadline: ${deadline}\n\nPlease make sure to complete it on time.\n\nBest,\nEvent Team`,
+        html: `<h3>Hello ${name},</h3><p>You have been assigned a new task: <b>"${task}"</b> for the event <b>"${eventName}"</b>.</p><p>Deadline: <b>${deadline}</b></p><p>Please make sure to complete it on time.</p><p>Best,<br>Event Team</p>`,
+    }),
 };
 
 // Send Email Function

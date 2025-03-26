@@ -4,6 +4,7 @@ import {
   getLeaderboard,
   updateTaskStatus,
   getAllVolunteers,
+  registerVolunteer
 } from "../controllers/user.controller.js"; // Import controller
 
 const router = express.Router();
@@ -16,6 +17,9 @@ router.get("/leaderboard", getLeaderboard);
 
 // Route to get all volunteers
 router.get("/volunteers", getAllVolunteers);
+
+// register a new volunteer
+router.post("/register", registerVolunteer);
 
 // Route to Update task status
 router.put("/update-task-status", updateTaskStatus);
