@@ -34,7 +34,6 @@ import {
 // import { useReportData } from "@/hooks/use-report-data";
 
 const Reports = ({ reports }: EventReportsProps) => {
-  console.log(reports);
   const [selectedTab, setSelectedTab] = useState("overview");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   // const { isLoading, reports, events, eventDetails } = useReportData();
@@ -108,22 +107,20 @@ const Reports = ({ reports }: EventReportsProps) => {
             {/* )} */}
           </TabsContent>
 
-          {/* <TabsContent value="events" className="mt-6 animate-fade-in">
+          <TabsContent value="events" className="mt-6 animate-fade-in">
             {
-            // isLoading ? (
-            //   <LoadingSpinner />) : 
+              // isLoading ? (
+              //   <LoadingSpinner />) :
               selectedEventId ? (
-              <EventDetails
-                event={events.find((e) => e.eventid === selectedEventId)!}
-                details={
-                  eventDetails.find((d) => d.eventid === selectedEventId)!
-                }
-                onBack={handleBackToList}
-              />
-            ) : (
-              <EventList events={events} onEventClick={handleEventClick} />
-            )}
-          </TabsContent> */}
+                <EventDetails
+                  event={reports.find((e) => e.eventId === selectedEventId)!}
+                  onBack={handleBackToList}
+                />
+              ) : (
+                <EventList events={reports} onEventClick={handleEventClick} />
+              )
+            }
+          </TabsContent>
         </Tabs>
       </div>
     </div>

@@ -4,13 +4,26 @@ import { Event, EventDetail } from "@/types/report";
 import { format } from "date-fns";
 import { RatingDistribution } from "./RatingDistribution";
 
+export interface EventData {
+  eventId: string;
+  eventName: string;
+  eventImage: string[];
+  eventDate: string;
+  volunteerCount: number;
+  participantCount: number;
+  rating: string;
+  ratingDistribution: {
+    [key: string]: number;
+  };
+}
+
 interface EventDetailsProps {
-  event: Event;
-  details: EventDetail;
+  event: EventData;
+
   onBack: () => void;
 }
 
-export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
+export const EventDetails = ({ event, onBack }: EventDetailsProps) => {
   // Generate star rating display
   const renderStars = (rating: number) => {
     const stars = [];
@@ -112,16 +125,16 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
           <Card className="glass-card animate-scale-in">
             <div className="relative h-60 md:h-80">
               <img
-                src={event.eventimage}
-                alt={event.eventname}
+                src={event.eventImage[0]}
+                alt={event.eventName}
                 className="object-cover w-full h-full rounded-t-lg"
               />
             </div>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">{event.eventname}</h2>
+                <h2 className="text-2xl font-bold">{event.eventName}</h2>
                 <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">
-                  {format(new Date(event.eventdate), "MMMM d, yyyy")}
+                  {format(new Date(event.eventDate), "MMMM d, yyyy")}
                 </span>
               </div>
 
@@ -130,14 +143,14 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                   <h3 className="text-sm text-gray-500 font-medium">
                     Event ID
                   </h3>
-                  <p className="font-mono text-sm">{event.eventid}</p>
+                  <p className="font-mono text-sm">{event.eventId}</p>
                 </div>
 
                 <div className="space-y-1">
                   <h3 className="text-sm text-gray-500 font-medium">
                     Event Type
                   </h3>
-                  <p>{event.eventname.split(" ")[0]}</p>
+                  <p>{event.eventName.split(" ")[0]}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -146,7 +159,7 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                   </h3>
                   <p className="flex items-center">
                     <span className="font-semibold text-lg mr-2">
-                      {details.participantno}
+                      {event.participantCount}
                     </span>
                     <span className="text-sm text-gray-500">
                       registered attendees
@@ -160,7 +173,7 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                   </h3>
                   <p className="flex items-center">
                     <span className="font-semibold text-lg mr-2">
-                      {details.volunteerno}
+                      {event.volunteerCount}
                     </span>
                     <span className="text-sm text-gray-500">support staff</span>
                   </p>
@@ -176,15 +189,15 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                     className="absolute top-0 left-0 h-full bg-blue-500"
                     style={{
                       width: `${
-                        (details.participantno /
-                          (details.participantno + details.volunteerno)) *
+                        (event.volunteerCount /
+                          (event.participantCount + event.volunteerCount)) *
                         100
                       }%`,
                     }}
                   ></div>
                   <div className="absolute inset-0 flex items-center justify-center text-xs font-medium">
                     {Math.round(
-                      (details.participantno / details.volunteerno) * 10
+                      (event.participantCount / event.volunteerCount) * 10
                     ) / 10}
                     :1 ratio
                   </div>
@@ -192,7 +205,7 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
               </div>
             </CardContent>
           </Card>
-          <RatingDistribution details={details} />
+          <RatingDistribution details={event.ratingDistribution} />
         </div>
 
         <div>
@@ -206,17 +219,17 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
               <div className="mb-6">
                 <div className="flex items-center mb-2">
                   <div className="flex mr-2">
-                    {renderStars(details.review.noOfstar)}
+                    {renderStars(Number(event.rating))}
                   </div>
                   <span className="text-sm font-medium">
-                    {details.review.noOfstar.toFixed(1)}/5.0
+                    {event.rating}/5.0
                   </span>
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                  <p className="text-gray-600 italic">
+                  {/* <p className="text-gray-600 italic">
                     "{details.review.review}"
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
@@ -232,7 +245,7 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                     </p>
                     <p className="font-semibold">
                       {Math.round(
-                        (details.participantno / event.eventparticipant) * 100
+                        (event.volunteerCount / event.participantCount) * 100
                       )}
                       %
                     </p>
@@ -244,7 +257,7 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                     </p>
                     <p className="font-semibold">
                       {Math.round(
-                        (details.volunteerno / event.eventvolunteer) * 100
+                        (event.volunteerCount / event.participantCount) * 100
                       )}
                       %
                     </p>
@@ -253,7 +266,8 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
                     <p className="text-xs text-gray-500 mb-1">Satisfaction</p>
                     <p className="font-semibold">
-                      {Math.round((details.review.noOfstar / 5) * 100)}%
+                      {/* {Math.round((details.review.noOfstar / 5) * 100)}% */}
+                      {event.rating}
                     </p>
                   </div>
 
@@ -261,7 +275,8 @@ export const EventDetails = ({ event, details, onBack }: EventDetailsProps) => {
                     <p className="text-xs text-gray-500 mb-1">Efficiency</p>
                     <p className="font-semibold">
                       {Math.round(
-                        (details.participantno / details.volunteerno / 5) * 100
+                        (event.participantCount / event.volunteerCount / 5) *
+                          100
                       )}
                       %
                     </p>
