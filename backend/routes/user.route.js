@@ -9,7 +9,7 @@ import {
   updateVolunteer,
   assignTaskToUser,
   requestVolunteerForEvent,
-  getIdOfVolunteer
+  getIdOfVolunteer,
 } from "../controllers/user.controller.js"; // Import controller
 
 const router = express.Router();
@@ -27,7 +27,7 @@ router.get("/volunteers", getAllVolunteers);
 router.post("/register", registerVolunteer);
 
 // login volunteer
-router.get("/mailtoid/:email", getIdOfVolunteer)
+router.get("/mailtoid/:email", getIdOfVolunteer);
 
 // add a new volunteer
 router.post("/add", addVolunteer);
@@ -46,7 +46,5 @@ router.post("/register-for-event", requestVolunteerForEvent);
 
 // Route to get user by ID
 router.get("/:id", getUserById);
-
-
 
 export default router;

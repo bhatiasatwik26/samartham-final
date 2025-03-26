@@ -30,6 +30,7 @@ export interface User {
 }
 
 export interface EventsSubscribed {
+  eventName: string;
   eventId: string;
   // eventName: string;
   assignedTasks: {

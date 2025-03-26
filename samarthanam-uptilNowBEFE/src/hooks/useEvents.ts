@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Event } from "@/types/event";
 
 export const fetchEvents = async () => {
-  const response = await fetch("http://localhost:3000/api/event"); // Replace with your backend URL
+  const response = await fetch("https://localhost:3000/api/event"); // Replace with your backend URL
 
   if (!response.ok) {
     throw new Error("Failed to fetch events");

@@ -80,7 +80,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="space-y-3">
         {leaderboardData.map((person) => (
           <div
-            key={person.name}
+            key={person.name + person.position}
             className={`flex   ${
               person.name === currentUserName
                 ? "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30"

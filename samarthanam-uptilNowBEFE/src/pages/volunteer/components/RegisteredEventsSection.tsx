@@ -86,7 +86,7 @@ export const RegisteredEventsSection = ({
             className="bg-red-50 dark:bg-red-900/5 rounded-2xl p-5 mb-6 border border-red-100 dark:border-red-900/20"
           >
             <h4 className="text-lg font-bold text-red-600 dark:text-red-400 mb-3">
-              {event.eventId}
+              {event.eventName}
             </h4>
 
             {/* Progress bar */}
@@ -106,9 +106,9 @@ export const RegisteredEventsSection = ({
 
             {/* Tasks */}
             <div className="space-y-3">
-              {event.assignedTasks.map((task) => (
+              {event.assignedTasks.map((task, i) => (
                 <div
-                  key={task.name}
+                  key={task.name + i}
                   className={`flex items-center justify-between p-3 rounded-lg transition-all 
                     ${
                       task.status === "completed"
