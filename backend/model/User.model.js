@@ -5,6 +5,7 @@ const UserSchema = new mongoose.Schema({
   photo: { type: String, default: "profilePlaceholder.jpeg" },
   email: { type: String, required: true, unique: true },
   name: { type: String, required: true },
+  password: { type: String, required: true },
   rank: {
     type: String,
     enum: ["Guardian Angel", "Compassion Warrior", "Hope Bearer", "Kindness Sentinel", "Inclusion Champion"],

@@ -308,8 +308,20 @@ export const getStatsOverview = async (req, res) => {
   // Create Event API
 export const createEvent = async (req, res) => {
     try {
-        const { name, category, description, date, time, location, imageUrl, 
-                registrationStart, registrationEnd, eventStart, eventEnd } = req.body;
+        const { 
+            name, 
+            category, 
+            description, 
+            date, 
+            time, 
+            location, 
+            imageUrl, 
+            registrationStart, 
+            registrationEnd, 
+            eventStart, 
+            eventEnd,
+            geographicalLocation 
+        } = req.body;
 
         // Validate required fields
         if (!name || !category || !description || !date || !time || !location || 
@@ -322,20 +334,49 @@ export const createEvent = async (req, res) => {
             name,
             category,
             description,
-            date,
+            date: new Date(date),
             time,
             location,
-            imageUrl,
-            registrationStart,
-            registrationEnd,
-            eventStart,
-            eventEnd
+            photos: imageUrl ? [imageUrl] : [],
+            registrationStart: new Date(registrationStart),
+            registrationEnd: new Date(registrationEnd),
+            eventStart: new Date(eventStart),
+            eventEnd: new Date(eventEnd),
+            geographicalLocation: geographicalLocation || {
+                type: "Point",
+                coordinates: [0, 0] // Default coordinates if none provided
+            }
         });
 
         // Save to database
         await newEvent.save();
 
-        res.status(201).json({ message: "Event created successfully!", event: newEvent });
+        // Find volunteers interested in this category
+        const interestedVolunteers = await User.find({ interestedCategories: category });
+        console.log(`Found ${interestedVolunteers.length} volunteers interested in ${category}`);
+
+        // Send notification emails to interested volunteers
+        if (interestedVolunteers.length > 0) {
+            const notificationPromises = interestedVolunteers.map(volunteer => {
+                return sendEmail(volunteer.email, "newEventNotification", {
+                    name: volunteer.name,
+                    eventName: name,
+                    eventCategory: category,
+                    eventDate: new Date(date).toLocaleDateString(),
+                    eventLocation: location,
+                    registrationDeadline: new Date(registrationEnd).toLocaleDateString()
+                });
+            });
+
+            // Wait for all emails to be sent
+            await Promise.all(notificationPromises);
+        }
+
+        res.status(201).json({ 
+            message: "Event created successfully and notifications sent!", 
+            event: newEvent,
+            notificationsSent: interestedVolunteers.length
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error", error: error.message });

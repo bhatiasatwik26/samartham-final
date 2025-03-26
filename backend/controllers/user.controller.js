@@ -1,7 +1,8 @@
 import User from "../model/User.model.js"; // Adjust path if needed
+import Event from "../model/Event.model.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-
+import { sendEmail } from "../utils/email.utils.js";
 dotenv.config({ path: "../.env" });
 
 // get users details by id
@@ -117,8 +118,8 @@ export const updateTaskStatus = async (req, res) => {
 
 export const getAllVolunteers = async (req, res) => {
   try {
-      // Fetch users who have volunteered at least once
-      const volunteers = await User.find({ eventsVolunteered: { $gt: 0 } });
+      // Fetch all users (volunteers don't need to have volunteered yet)
+      const volunteers = await User.find();
 
       if (volunteers.length === 0) {
           return res.status(404).json({ message: "No volunteers found." });
@@ -157,5 +158,198 @@ export const registerVolunteer = async (req, res) => {
       res.status(201).json({ message: "Volunteer registered successfully!", user });
   } catch (error) {
       res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+// Add a new volunteer
+export const addVolunteer = async (req, res) => {
+  try {
+    const { name, email, phone, address, interests, interestedCategories, status } = req.body;
+
+    // Basic validation
+    if (!name || !email) {
+      return res.status(400).json({ message: "Name and email are required" });
+    }
+
+    // Check if the volunteer already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "A volunteer with that email already exists" });
+    }
+
+    // Create a new user
+    const newUser = new User({
+      name,
+      email,
+      interestedCategories: interestedCategories || [],
+      // Add other fields as needed
+    });
+
+    await newUser.save();
+
+    res.status(201).json({
+      message: "Volunteer added successfully",
+      volunteer: newUser
+    });
+  } catch (error) {
+    console.error("Error adding volunteer:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Update volunteer details
+export const updateVolunteer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, address, interests, interestedCategories, events, status } = req.body;
+
+    // Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Volunteer not found" });
+    }
+
+    // Update user fields if provided
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (interestedCategories) user.interestedCategories = interestedCategories;
+    
+    // Save the updated user
+    await user.save();
+
+    res.status(200).json({
+      message: "Volunteer updated successfully",
+      volunteer: user
+    });
+  } catch (error) {
+    console.error("Error updating volunteer:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Assign task to a user for a specific event
+export const assignTaskToUser = async (req, res) => {
+  try {
+    const { userId, eventId, taskName, status, deadline } = req.body;
+
+    // Validate input
+    if (!userId || !eventId || !taskName) {
+      return res.status(400).json({ message: "User ID, Event ID, and Task Name are required" });
+    }
+
+    // Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid User ID or Event ID format" });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if user is already subscribed to the event
+    let eventSubscription = user.eventsSubscribed.find(
+      (event) => event.eventId.toString() === eventId
+    );
+
+    // If user is not subscribed to the event, add the event subscription
+    if (!eventSubscription) {
+      eventSubscription = {
+        eventId,
+        assignedTasks: [],
+      };
+      user.eventsSubscribed.push(eventSubscription);
+    }
+
+    // Add the task to the user's assigned tasks for this event
+    eventSubscription.assignedTasks.push({
+      name: taskName,
+      status: status || "pending",
+      deadline: deadline ? new Date(deadline) : null,
+    });
+
+    // Save the updated user
+    await user.save();
+
+    // If this is their first task, increment eventsVolunteered if it's 0
+    if (user.eventsVolunteered === 0) {
+      user.eventsVolunteered = 1;
+      await user.save();
+    }
+
+    sendEmail(user.email, "Task Assigned", `You have been assigned a task for ${taskName} in event ${eventId}. Please complete it by ${deadline}.`);
+
+    res.status(200).json({ 
+      message: "Task assigned successfully",
+      user
+    });
+  } catch (error) {
+    console.error("Error assigning task:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Register a volunteer for an event
+export const requestVolunteerForEvent = async (req, res) => {
+  try {
+    const { userId, eventId } = req.body;
+
+    // Validate input
+    if (!userId || !eventId) {
+      return res.status(400).json({ message: "User ID and Event ID are required" });
+    }
+
+    // Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid User ID or Event ID format" });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+    const event = await Event.findById(eventId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Check if user is already subscribed to the event
+    const isAlreadySubscribed = user.eventsSubscribed.some(
+      (event) => event.eventId.toString() === eventId
+    );
+
+    if (isAlreadySubscribed) {
+      return res.status(400).json({ message: "User is already registered for this event" });
+    }
+
+    // Send email with await to ensure it completes
+    const emailResult = await sendEmail(user.email, "requestforEventRegistration", {
+      name: user.name,
+      eventName: event.name,
+      eventCategory: event.category,
+      eventDate: new Date(event.date).toLocaleDateString(),
+      eventLocation: event.location,
+      registrationDeadline: new Date(event.registrationEnd).toLocaleDateString()
+    });
+
+    if (!emailResult.success) {
+      console.error("Failed to send email:", emailResult.error);
+    }
+
+    res.status(200).json({ 
+      message: "Volunteer registered for event successfully",
+      user,
+      emailSent: emailResult.success
+    });
+  } catch (error) {
+    console.error("Error registering volunteer for event:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

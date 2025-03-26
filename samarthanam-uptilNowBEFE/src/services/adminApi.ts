@@ -45,13 +45,14 @@ export interface EventProgress {
 }
 
 export interface Volunteer {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
   address: string;
   interests: string;
   events: string[];
+  interestedCategories?: string[];
   status: "active" | "inactive";
 }
 
@@ -211,7 +212,7 @@ const adminApi = {
             events: user.eventsSubscribed
               .map((event) => event.assignedTasks.map((task) => task.name))
               .flat(), // Extracting all task names into events array
-
+            interestedCategories: user.interestedCategories || [], // Include category interests
             status: hasTasks ? "active" : "inactive", // Status based on tasks
           };
         });
@@ -250,18 +251,39 @@ const adminApi = {
   },
 
   // Add new volunteer
-  addVolunteer: async (
-    volunteer: Omit<Volunteer, "id">
-  ): Promise<Volunteer> => {
+  addVolunteer: async (volunteer: Omit<Volunteer, 'id'>): Promise<Volunteer> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/admin/volunteers`,
-        volunteer
-      );
-      return response.data;
+      const response = await axios.post(`${API_BASE_URL}/user/add`, {
+        name: volunteer.name,
+        email: volunteer.email,
+        phone: volunteer.phone || "",
+        address: volunteer.address || "",
+        interests: volunteer.interests || "",
+        interestedCategories: volunteer.interestedCategories || [],
+        status: volunteer.status
+      });
+      
+      return response.data.volunteer;
     } catch (error) {
       console.error("Error adding volunteer:", error);
-      throw error;
+      throw new Error("Failed to add volunteer");
+    }
+  },
+
+  // Update volunteer details
+  updateVolunteer: async (
+    volunteerId: string,
+    volunteerData: Partial<Volunteer>
+  ): Promise<Volunteer> => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/user/update/${volunteerId}`,
+        volunteerData
+      );
+      return response.data.volunteer;
+    } catch (error) {
+      console.error("Error updating volunteer:", error);
+      throw new Error("Failed to update volunteer");
     }
   },
 
@@ -285,7 +307,7 @@ const adminApi = {
   // Get all events
   getEvents: async (): Promise<Event[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/events`);
+      const response = await axios.get(`${API_BASE_URL}/event`);
 
       const transformEvents = (data: any[]): Event[] => {
         const currentDate = new Date();
@@ -306,13 +328,13 @@ const adminApi = {
           }
 
           return {
-            id: index + 1,
+            id: event._id || index.toString(),  // Use actual ID from backend
             title: event.name || "N/A",
             description: event.description || "No description available",
             date: startDate.toISOString(),
             location: event.location || "Unknown location",
             imageUrl:
-              event.photos?.[0] || "https://example.com/default-image.jpg",
+              event.photos?.[0] || "https://placehold.co/300x300?text=Event",
             status,
           };
         });

@@ -4,7 +4,11 @@ import {
   getLeaderboard,
   updateTaskStatus,
   getAllVolunteers,
-  registerVolunteer
+  registerVolunteer,
+  addVolunteer,
+  updateVolunteer,
+  assignTaskToUser,
+  requestVolunteerForEvent
 } from "../controllers/user.controller.js"; // Import controller
 
 const router = express.Router();
@@ -21,8 +25,20 @@ router.get("/volunteers", getAllVolunteers);
 // register a new volunteer
 router.post("/register", registerVolunteer);
 
+// add a new volunteer
+router.post("/add", addVolunteer);
+
+// update volunteer details
+router.put("/update/:id", updateVolunteer);
+
 // Route to Update task status
 router.put("/update-task-status", updateTaskStatus);
+
+// Route to assign task to user
+router.post("/assign-task", assignTaskToUser);
+
+// Route to register volunteer for event
+router.post("/register-for-event", requestVolunteerForEvent);
 
 // Route to get user by ID
 router.get("/:id", getUserById);

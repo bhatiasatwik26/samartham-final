@@ -28,11 +28,10 @@ import adminApi, {
   EventProgress,
   Volunteer,
   VolunteerOverview,
-  getAllStats,
+  Reports,
 } from "@/services/adminApi";
 import { useToast } from "@/components/ui/use-toast";
 import ReportCharts from "@/components/ReportCharts";
-import { Reports } from "@/types/report";
 
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -53,6 +52,9 @@ const AdminDashboard = () => {
     interests: "",
     status: "active",
   });
+  
+  // State for managing selected categories
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   // API data states
   const [isLoading, setIsLoading] = useState({
@@ -92,7 +94,7 @@ const AdminDashboard = () => {
     isLoading: true,
   });
 
-  // Local events state
+  // Local events state with extended type that includes status
   const [localEvents, setLocalEvents] = useState(events);
 
   // Search and filter volunteers
@@ -155,6 +157,9 @@ const AdminDashboard = () => {
     } finally {
       setIsLoading((prev) => ({ ...prev, volunteerOverview: false }));
     }
+    
+    // Also fetch events when loading dashboard
+    fetchEvents();
   };
 
   // Fetch volunteers
@@ -174,16 +179,19 @@ const AdminDashboard = () => {
       setIsLoading((prev) => ({ ...prev, volunteers: false }));
     }
   };
+  
   const fetchEvents = async () => {
     setIsLoading((prev) => ({ ...prev, events: true }));
     try {
       const eventData = await adminApi.getEvents();
-      setLocalEvents(eventData);
+      console.log("Fetched events:", eventData);
+      // Use type assertion to safely convert different event types
+      setLocalEvents(eventData as any);
     } catch (error) {
-      console.error("Error fetching volunteers:", error);
+      console.error("Error fetching events:", error);
       toast({
         title: "Error",
-        description: "Failed to load volunteers data",
+        description: "Failed to load events data",
         variant: "destructive",
       });
     } finally {
@@ -192,18 +200,11 @@ const AdminDashboard = () => {
   };
 
   const fetchEventStats = async () => {
+    setIsLoading((prev) => ({ ...prev, generateReport: true }));
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/event/getAllEventStats"
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch event stats");
-      }
-
-      const stats: Reports[] = await response.json(); // ✅ Explicitly define the type
-
-      setReports(stats); // ✅ Set the state with the correct type
+      // Use the adminApi instead of direct fetch
+      const stats = await adminApi.getAllStats();
+      setReports(stats);
     } catch (error) {
       console.error("Error fetching event stats:", error);
       toast({
@@ -237,14 +238,14 @@ const AdminDashboard = () => {
   // Load data based on active section
   useEffect(() => {
     fetchAdminInfo();
-    fetchEventStats();
-    // fetchEvents();
+    // Always fetch events initially
+    fetchEvents();
+    
     if (activeSection === "dashboard") {
       fetchDashboardData();
     } else if (activeSection === "volunteers") {
       fetchVolunteers();
     } else if (activeSection === "reports") {
-      console.log("here");
       fetchEventStats();
     }
   }, [activeSection]);
@@ -313,21 +314,39 @@ const AdminDashboard = () => {
         address: newVolunteer.address,
         interests: newVolunteer.interests,
         events: [],
+        interestedCategories: selectedCategories,
         status: newVolunteer.status as "active" | "inactive",
       };
 
-      // Call API to add volunteer
-      await adminApi.addVolunteer(volunteer);
+      if (currentVolunteer) {
+        // Update existing volunteer using MongoDB ObjectId
+        const volunteerId = typeof currentVolunteer.id === 'object' 
+          ? currentVolunteer.id.toString() 
+          : currentVolunteer.id;
+          
+        await adminApi.updateVolunteer(volunteerId, {
+          ...volunteer,
+          events: currentVolunteer.events // Preserve existing events
+        });
+        
+        toast({
+          title: "Success",
+          description: "Volunteer updated successfully",
+          variant: "default",
+        });
+      } else {
+        // Call API to add volunteer
+        await adminApi.addVolunteer(volunteer);
+        
+        toast({
+          title: "Success",
+          description: "Volunteer added successfully",
+          variant: "default",
+        });
+      }
 
       // Refresh volunteer list
       fetchVolunteers();
-
-      // Show success toast
-      toast({
-        title: "Success",
-        description: "Volunteer added successfully",
-        variant: "default",
-      });
 
       // Reset form and close modal
       setNewVolunteer({
@@ -338,12 +357,14 @@ const AdminDashboard = () => {
         interests: "",
         status: "active",
       });
+      setSelectedCategories([]);
       setIsAddVolunteerModalOpen(false);
+      setCurrentVolunteer(null);
     } catch (error) {
-      console.error("Error adding volunteer:", error);
+      console.error("Error managing volunteer:", error);
       toast({
         title: "Error",
-        description: "Failed to add volunteer",
+        description: currentVolunteer ? "Failed to update volunteer" : "Failed to add volunteer",
         variant: "destructive",
       });
     }
@@ -351,14 +372,12 @@ const AdminDashboard = () => {
 
   // Available events for selection
   const availableEvents = [
-    "Food Drive",
-    "Beach Cleanup",
-    "Education Workshop",
-    "Fundraising Gala",
-    "Community Health Camp",
-    "Tree Planting",
-    "Children's Art Program",
-    "Senior Citizens Outreach",
+    "Education",
+    "Healthcare",
+    "Environment", 
+    "Sports",
+    "Arts & Culture",
+    "Community Service"
   ];
 
   const openEditEventsModal = (volunteer: any) => {
@@ -405,6 +424,43 @@ const AdminDashboard = () => {
         description: "Failed to update volunteer events",
         variant: "destructive",
       });
+    }
+  };
+
+  // Modify exportEventData to build CSV properly
+  const exportEventsData = () => {
+    const headers = "Title,Date,Location,Status\n";
+    const csvContent = localEvents.reduce((acc: string, event) => {
+      const status = (event as any).status || "active";
+      return (
+        acc +
+        `"${event.title}","${event.date}","${event.location}","${status}"\n`
+      );
+    }, headers);
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "events.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export Complete",
+      description: "Events data downloaded as CSV",
+    });
+  };
+
+  // Handler for category checkbox changes
+  const handleCategoryChange = (category: string) => {
+    if (selectedCategories.includes(category)) {
+      setSelectedCategories(selectedCategories.filter(cat => cat !== category));
+    } else {
+      setSelectedCategories([...selectedCategories, category]);
     }
   };
 
@@ -713,7 +769,7 @@ const AdminDashboard = () => {
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.slice(0, 3).map((event) => (
+          {localEvents.slice(0, 3).map((event) => (
             <div
               key={event.id}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col sm:flex-row"
@@ -735,7 +791,7 @@ const AdminDashboard = () => {
                     {event.title}
                   </h3>
                   <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">
-                    Active
+                    {(event as any).status || "Active"}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{event.date}</p>
@@ -767,11 +823,11 @@ const AdminDashboard = () => {
           <button
             onClick={() => {
               // Export volunteer data as CSV
-              const headers = "Name,Email,Phone,Status,Joined\n";
+              const headers = "Name,Email,Phone,Status\n";
               const csvContent = volunteers.reduce((acc, vol) => {
                 return (
                   acc +
-                  `${vol.name},"${vol.email}","${vol.phone}",${vol.status},${vol.joined}\n`
+                  `${vol.name},"${vol.email}","${vol.phone}",${vol.status}\n`
                 );
               }, headers);
 
@@ -930,6 +986,8 @@ const AdminDashboard = () => {
                             interests: volunteer.interests,
                             status: volunteer.status,
                           });
+                          // Set selected categories from volunteer data if available
+                          setSelectedCategories(volunteer.interestedCategories || []);
                           setIsAddVolunteerModalOpen(true);
                         }}
                       >
@@ -1135,6 +1193,31 @@ const AdminDashboard = () => {
                     rows={2}
                   />
                 </div>
+                
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium mb-1">
+                    Interested Categories
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-lg bg-gray-50 dark:bg-gray-700">
+                    {["Education", "Healthcare", "Environment", "Sports", "Arts & Culture", "Community Service"].map((category) => (
+                      <div key={category} className="flex items-center">
+                        <input 
+                          type="checkbox" 
+                          id={`category-${category}`}
+                          className="mr-2 h-4 w-4"
+                          checked={selectedCategories.includes(category)}
+                          onChange={() => handleCategoryChange(category)}
+                        />
+                        <label htmlFor={`category-${category}`} className="text-sm">
+                          {category}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Volunteers will be notified of new events in these categories
+                  </p>
+                </div>
               </div>
 
               <div className="flex justify-end mt-6 gap-2">
@@ -1169,32 +1252,7 @@ const AdminDashboard = () => {
         <h1 className="text-2xl font-bold">Event Management</h1>
         <div className="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
           <button
-            onClick={() => {
-              // Export events data as CSV
-              const headers = "Title,Date,Location,Status\n";
-              const csvContent = localEvents.reduce((acc: string, event) => {
-                return (
-                  acc +
-                  `"${event.title}","${event.date}","${event.location}","${event.status}"\n`
-                );
-              }, headers);
-
-              const blob = new Blob([csvContent], {
-                type: "text/csv;charset=utf-8;",
-              });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.setAttribute("href", url);
-              link.setAttribute("download", "events.csv");
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-
-              toast({
-                title: "Export Complete",
-                description: "Events data downloaded as CSV",
-              });
-            }}
+            onClick={exportEventsData}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg"
           >
             <FileText size={16} />
@@ -1229,12 +1287,12 @@ const AdminDashboard = () => {
               <div className="absolute top-2 right-2">
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    event.status === "active"
+                    (event as any).status === "active"
                       ? "bg-green-100 text-green-800"
                       : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {event.status || "Active"}
+                  {(event as any).status || "Active"}
                 </span>
               </div>
             </div>
@@ -1254,16 +1312,39 @@ const AdminDashboard = () => {
 
               <div className="mt-auto space-y-2">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (
                       window.confirm(
                         "Are you sure you want to delete this event?"
                       )
                     ) {
-                      setLocalEvents((prevEvents) =>
-                        prevEvents.filter((e) => e.id !== event.id)
-                      );
-                      toast.success("Event deleted successfully");
+                      try {
+                        // Call the backend API to delete the event
+                        const response = await fetch(`http://localhost:3000/api/event/delete/${event.id}`, {
+                          method: 'DELETE',
+                        });
+                        
+                        if (!response.ok) {
+                          throw new Error(`Failed to delete event: ${response.status}`);
+                        }
+                        
+                        // Update local state to reflect the change
+                        setLocalEvents((prevEvents) =>
+                          prevEvents.filter((e) => e.id !== event.id)
+                        );
+                        
+                        toast({
+                          title: "Success",
+                          description: "Event deleted successfully",
+                        });
+                      } catch (error) {
+                        console.error("Error deleting event:", error);
+                        toast({
+                          title: "Error",
+                          description: error instanceof Error ? error.message : "Failed to delete event",
+                          variant: "destructive"
+                        });
+                      }
                     }
                   }}
                   className="w-full px-4 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors duration-200"
@@ -1344,47 +1425,58 @@ const AdminDashboard = () => {
             onSubmit={async (e) => {
               e.preventDefault();
               try {
+                setIsLoading(prev => ({...prev, createEvent: true}));
                 const formData = new FormData(e.currentTarget);
+                
+                // Prepare the data for the backend API
                 const eventData = {
-                  name: formData.get("name"),
-                  description: formData.get("description"),
-                  date: formData.get("date"),
-                  time: formData.get("time"),
-                  location: formData.get("location"),
-                  imageUrl: formData.get("imageUrl") || "",
-                  category: formData.get("category"),
-                  timestamps: {
-                    registrationStart: formData.get("registrationStart"),
-                    registrationEnd: formData.get("registrationEnd"),
-                    eventStart: formData.get("eventStart"),
-                    eventEnd: formData.get("eventEnd"),
-                  },
+                  name: formData.get("name") as string,
+                  description: formData.get("description") as string,
+                  date: formData.get("date") as string,
+                  time: formData.get("time") as string,
+                  location: formData.get("location") as string,
+                  imageUrl: formData.get("imageUrl") as string || "",
+                  category: formData.get("category") as string,
+                  registrationStart: formData.get("registrationStart") as string,
+                  registrationEnd: formData.get("registrationEnd") as string,
+                  eventStart: formData.get("eventStart") as string,
+                  eventEnd: formData.get("eventEnd") as string,
+                  // Add required fields for backend
+                  photos: formData.get("imageUrl") ? [(formData.get("imageUrl") as string)] : [],
+                  geographicalLocation: {
+                    type: "Point",
+                    coordinates: [0, 0], // Default coordinates, should be replaced with actual location data
+                  }
                 };
 
                 console.log("Event Data to be sent:", eventData);
 
-                // For now, we'll simulate a successful response
-                // Later this will be replaced with actual backend call
-                const mockResponse = {
-                  success: true,
-                  id: "event-" + Date.now(),
-                  ...eventData,
-                };
+                // Call the backend API
+                const response = await fetch('http://localhost:3000/api/event/create', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(eventData),
+                });
 
-                // Simulate API delay
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+                if (!response.ok) {
+                  throw new Error(`Failed to create event: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
 
                 // Handle success
                 toast({
                   title: "Success",
-                  description: "New event created successfully",
+                  description: `Event created successfully! ${result.notificationsSent > 0 ? `${result.notificationsSent} interested volunteers notified.` : ''}`,
                 });
 
                 // Close the modal
                 setIsCreateEventModalOpen(false);
-
-                // Optional: Update local state or refresh events list
-                // This part will be implemented when backend is ready
+                
+                // Refresh events list
+                fetchEvents();
               } catch (error) {
                 console.error("Error in event creation:", error);
                 toast({
@@ -1395,6 +1487,8 @@ const AdminDashboard = () => {
                       : "Failed to create event. Please try again.",
                   variant: "destructive",
                 });
+              } finally {
+                setIsLoading(prev => ({...prev, createEvent: false}));
               }
             }}
             className="p-6 space-y-6"
@@ -1423,12 +1517,12 @@ const AdminDashboard = () => {
                   required
                 >
                   <option value="">Select category</option>
-                  <option value="Food Drive">Food Drive</option>
-                  <option value="Beach Cleanup">Beach Cleanup</option>
-                  <option value="Education Workshop">Education Workshop</option>
-                  <option value="Health Camp">Health Camp</option>
-                  <option value="Sports Event">Sports Event</option>
-                  <option value="Cultural Event">Cultural Event</option>
+                  <option value="Education">Education</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Environment">Environment</option>
+                  <option value="Sports">Sports</option>
+                  <option value="Arts & Culture">Arts & Culture</option>
+                  <option value="Community Service">Community Service</option>
                 </select>
               </div>
 
