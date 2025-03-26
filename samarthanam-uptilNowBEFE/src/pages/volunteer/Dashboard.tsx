@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ArrowRight } from "lucide-react";
@@ -21,78 +21,78 @@ import Heatmap from "./components/Heatmap";
 import { useVolunteerData } from "@/hooks/useVolunteerData";
 
 // Mock data for development
-const Demo_user = {
-  id: "001",
-  name: "John Doe",
-  email: "john.doe@example.com",
-  rank: "gold",
-  nextRank: "platinum",
-  pointsForNextRank: 250,
-  eventsVolunteered: 12,
-  volunteerHour: 48,
-  // We'll replace these mock events with real ones
-  subscribedEventIds: ["event-1", "event-3", "event-5"],
-};
+// const Demo_user = {
+//   id: "001",
+//   name: "John Doe",
+//   email: "john.doe@example.com",
+//   rank: "gold",
+//   nextRank: "platinum",
+//   pointsForNextRank: 250,
+//   eventsVolunteered: 12,
+//   volunteerHour: 48,
+//   // We'll replace these mock events with real ones
+//   subscribedEventIds: ["event-1", "event-3", "event-5"],
+// };
 
-// Mock event tasks for development
-const Demo_event_tasks = {
-  "event-1": [
-    {
-      id: "task-1",
-      name: "Give water",
-      deadline: "12/31/2024",
-      status: "completed",
-    },
-    {
-      id: "task-2",
-      name: "Drink Give water",
-      deadline: "2/18/2025",
-      status: "pending",
-    },
-  ],
-  "event-3": [
-    {
-      id: "task-3",
-      name: "Distribute bikes",
-      deadline: "3/5/2025",
-      status: "completed",
-    },
-    {
-      id: "task-4",
-      name: "Take back bikes",
-      deadline: "2/7/2025",
-      status: "completed",
-    },
-  ],
-  "event-5": [
-    {
-      id: "task-5",
-      name: "Setup registration booth",
-      deadline: "1/15/2025",
-      status: "pending",
-    },
-    {
-      id: "task-6",
-      name: "Distribute t-shirts",
-      deadline: "1/15/2025",
-      status: "pending",
-    },
-    {
-      id: "task-7",
-      name: "Clean up area",
-      deadline: "1/15/2025",
-      status: "pending",
-    },
-  ],
-};
+// // Mock event tasks for development
+// const Demo_event_tasks = {
+//   "event-1": [
+//     {
+//       id: "task-1",
+//       name: "Give water",
+//       deadline: "12/31/2024",
+//       status: "completed",
+//     },
+//     {
+//       id: "task-2",
+//       name: "Drink Give water",
+//       deadline: "2/18/2025",
+//       status: "pending",
+//     },
+//   ],
+//   "event-3": [
+//     {
+//       id: "task-3",
+//       name: "Distribute bikes",
+//       deadline: "3/5/2025",
+//       status: "completed",
+//     },
+//     {
+//       id: "task-4",
+//       name: "Take back bikes",
+//       deadline: "2/7/2025",
+//       status: "completed",
+//     },
+//   ],
+//   "event-5": [
+//     {
+//       id: "task-5",
+//       name: "Setup registration booth",
+//       deadline: "1/15/2025",
+//       status: "pending",
+//     },
+//     {
+//       id: "task-6",
+//       name: "Distribute t-shirts",
+//       deadline: "1/15/2025",
+//       status: "pending",
+//     },
+//     {
+//       id: "task-7",
+//       name: "Clean up area",
+//       deadline: "1/15/2025",
+//       status: "pending",
+//     },
+//   ],
+// };
 
-const Demo_leaderboard = [
-  { name: "Sarah Johnson", points: 980 },
-  { name: "John Doe", points: 850 },
-  { name: "Michael Chen", points: 780 },
-  { name: "Emma Williams", points: 720 },
-  { name: "David Lee", points: 650 },
-];
+// const Demo_leaderboard = [
+//   { name: "Sarah Johnson", points: 980 },
+//   { name: "John Doe", points: 850 },
+//   { name: "Michael Chen", points: 780 },
+//   { name: "Emma Williams", points: 720 },
+//   { name: "David Lee", points: 650 },
+// ];
 
 const VolunteerDashboard = () => {
   // const [user, setUser] = useState(null);
@@ -290,8 +290,10 @@ const VolunteerDashboard = () => {
   //   }
   // };
 
+  const { id } = useParams();
+
   const { user, subscribedEvents, isUserLoading, isUserError } =
-    useVolunteerData();
+    useVolunteerData(id);
 
   if (isUserLoading) {
     return (

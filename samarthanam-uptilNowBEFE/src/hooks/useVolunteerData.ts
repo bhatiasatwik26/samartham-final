@@ -9,18 +9,18 @@ interface VolunteerData {
 }
 
 // ✅ Fetch User Data Function
-const fetchUserData = async (): Promise<{
+const fetchUserData = async (
+  id: string
+): Promise<{
   user: User | null;
   subscribedEvents: EventsSubscribed[];
 }> => {
+  console.log("Fetching data for ID:", id);
   try {
-    const response = await fetch(
-      "http://localhost:3000/api/user/67e30f95380f216d0a365e8f",
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
+    const response = await fetch(`http://localhost:3000/api/user/${id}`, {
+      method: "GET",
+      credentials: "include",
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch user data");
@@ -42,7 +42,6 @@ const fetchUserData = async (): Promise<{
       eventsParticipated: data.eventsParticipated ?? 0,
       eventsSubscribed: (data.eventsSubscribed || []).map((event: any) => ({
         eventId: event.eventId,
-
         assignedTasks: (event.assignedTasks || []).map((task: any) => ({
           name: task.name,
           status: task.status,
@@ -66,7 +65,7 @@ const fetchUserData = async (): Promise<{
 };
 
 // ✅ Custom Hook with Proper Types and Loading/Error Handling
-export const useVolunteerData = (): VolunteerData => {
+export const useVolunteerData = (id: string): VolunteerData => {
   const {
     data,
     isLoading: isUserLoading,
@@ -75,8 +74,8 @@ export const useVolunteerData = (): VolunteerData => {
     user: User | null;
     subscribedEvents: EventsSubscribed[];
   }>({
-    queryKey: ["userData"],
-    queryFn: fetchUserData,
+    queryKey: ["userData", id], // Use id as part of the key to avoid caching issues
+    queryFn: () => fetchUserData(id), // ✅ Pass the function reference, not the result
     staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
     retry: 2, // Retry twice on failure
   });

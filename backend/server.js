@@ -10,7 +10,7 @@ import eventRoutes from "./routes/event.route.js";
 import emailRoutes from "./routes/email.routes.js";
 import participantRoutes from "./routes/participant.routes.js";
 import cors from "cors";
-import  "./cronJobs/taskReminder.js"; // import and execute the cron job for sending task reminder emails at 8:00AM daily.
+import "./cronJobs/taskReminder.js"; // import and execute the cron job for sending task reminder emails at 8:00AM daily.
 
 // Manually run the cron job for testing when server will start corn job function will call
 
@@ -34,9 +34,10 @@ const server = http.createServer(app); // here i wraps express server inside htt
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const allowedOrigins = ["http://localhost:8081"];
 app.use(
   cors({
-    origin: "*", // Allow requests from your frontend
+    origin: allowedOrigins, // Allow requests from your frontend
     credentials: true, // Allow cookies and auth headers
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
   })
@@ -50,7 +51,7 @@ socketConfig(server);
 app.use("/api/user", userRoutes); // user routes
 app.use("/api/event", eventRoutes); // event route
 app.use("/api/email", emailRoutes); // email route
-app.use("/api/participant", participantRoutes);  // participant route
+app.use("/api/participant", participantRoutes); // participant route
 
 app.get("/", (req, res) => {
   res.send("API is running...");

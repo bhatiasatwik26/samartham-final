@@ -34,7 +34,10 @@ const App = () => {
         <Route path="/events" element={<Events />} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
+        <Route
+          path="/volunteer-dashboard/:id"
+          element={<VolunteerDashboard />}
+        />
         <Route path="/volunteer-register" element={<VolunteerRegister />} />
         <Route path="/volunteer-login" element={<VolunteerLogin />} />
         <Route path="/badges" element={<BadgesPage />} />
@@ -45,13 +48,19 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/help" element={<Help />} />
-        <Route path="/participant-registration" element={<ParticipantRegistration />} />
-        <Route path="/participant-dashboard" element={<ParticipantDashboard />} />
+        <Route
+          path="/participant-registration"
+          element={<ParticipantRegistration />}
+        />
+        <Route
+          path="/participant-dashboard"
+          element={<ParticipantDashboard />}
+        />
         <Route path="/participant-login" element={<ParticipantLogin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      <SpeechRecognizer/>
+      <SpeechRecognizer />
       <Toaster />
     </TooltipProvider>
   );
