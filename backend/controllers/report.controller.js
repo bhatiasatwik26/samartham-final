@@ -55,6 +55,7 @@ export const getEventStats = async (req, res) => {
 
 
 // Get category-wise statistics
+// Get category-wise statistics
 export const getCategoryStats = async (req, res) => {
   try {
     // Define categories
@@ -64,26 +65,25 @@ export const getCategoryStats = async (req, res) => {
     const eventsByCategory = await Event.aggregate([
       { $group: { _id: "$category", eventCount: { $sum: 1 } } }
     ]);
-    
+
     // Create a map for quick lookup
     const categoryEventMap = {};
     eventsByCategory.forEach(item => {
       categoryEventMap[item._id] = item.eventCount;
     });
-    
+
     // Get volunteers interested in each category
     const volunteersByCategory = await User.aggregate([
-      { $match: { role: "volunteer" } },
-      { $unwind: "$interestedCategories" },
+      { $unwind: { path: "$interestedCategories", preserveNullAndEmptyArrays: true } }, // Fix unwinding
       { $group: { _id: "$interestedCategories", volunteerCount: { $sum: 1 } } }
     ]);
-    
+
     // Create a map for quick lookup
     const categoryVolunteerMap = {};
     volunteersByCategory.forEach(item => {
       categoryVolunteerMap[item._id] = item.volunteerCount;
     });
-    
+
     // Combine the data for all categories
     const categoryStats = categories.map(category => ({
       category,
@@ -150,12 +150,13 @@ export const getDashboardStats = async (req, res) => {
 // Get recent activities for admin dashboard
 export const getRecentActivities = async (req, res) => {
   try {
-    // Get the most recent user registrations, event creations, and task completions
-    // First, get recent volunteer registrations
-    const recentVolunteers = await User.find({ role: "volunteer" })
-      .sort({ createdAt: -1 })
-      .limit(3)
-      .lean();
+    // Get recent volunteers (users who have subscribed to at least one event)
+    const recentVolunteers = await User.find({ 
+      eventsSubscribed: { $exists: true, $not: { $size: 0 } } 
+    })
+    .sort({ createdAt: -1 })
+    .limit(3)
+    .lean();
       
     // Get recent events
     const recentEvents = await Event.find({})
@@ -179,7 +180,7 @@ export const getRecentActivities = async (req, res) => {
       }))
     ]
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, 5);  // Get the 5 most recent activities
+    .slice(0, 3);  // Get the 3 most recent activities
     
     return res.status(200).json({
       success: true,
@@ -200,31 +201,43 @@ export const getVolunteerOverview = async (req, res) => {
   try {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    // Count active volunteers
-    const activeVolunteers = await User.countDocuments({ 
-      role: "volunteer",
-      status: "active" 
+
+    // Count active volunteers (users who have subscribed to at least one event)
+    const activeVolunteers = await User.countDocuments({
+      eventsSubscribed: { $exists: true, $not: { $size: 0 } }
     });
-    
-    // Count new volunteers this month
+
+      console.log(firstDayOfMonth)
+    // Count new volunteers (users who joined this month and have subscribed to at least one event)
     const newVolunteers = await User.countDocuments({
-      role: "volunteer",
-      createdAt: { $gte: firstDayOfMonth }
+      createdAt: { $gte: firstDayOfMonth },
     });
-    
+    console.log(newVolunteers)
+    // Get IDs of ongoing/upcoming events
+    const upcomingEvents = await Event.find(
+      { date: { $gte: now } }, // Events in the present or future
+      { _id: 1 } // Select only _id field
+    );
+
+    const upcomingEventIds = upcomingEvents.map(event => event._id);
+
+    // Count volunteers with at least one ongoing/upcoming event subscription
+    const ongoingVolunteers = await User.countDocuments({
+      "eventsSubscribed.eventId": { $in: upcomingEventIds }
+    });
+
     return res.status(200).json({
       success: true,
       data: {
-        activeVolunteers,
-        newVolunteers
+        activeVolunteers, 
+        newVolunteers, 
       }
     });
   } catch (error) {
-    console.error('Error getting volunteer overview:', error);
+    console.error("Error getting volunteer overview:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error fetching volunteer overview',
+      message: "Error fetching volunteer overview",
       error: error.message
     });
   }
@@ -247,6 +260,8 @@ export const getEventDetailReport = async (req, res) => {
       });
     }
 
+    const volunteerCount = await User.countDocuments({ "eventsSubscribed.eventId": event._id });
+
     // Count participants from Participant model
     const participantCount = await Participant.countDocuments({ 
       "participatedEvents.eventId": event._id 
@@ -267,7 +282,7 @@ export const getEventDetailReport = async (req, res) => {
     const averageRating = totalRatings > 0 ? (weightedSum / totalRatings).toFixed(1) : "0.0";
     
     // Get reviews (if available)
-    const allReviews = event.reviews?.map(review => review.comment) || [];
+    const allReviews = event.reviews|| [];
     
     // Find the best review (highest rating)
     const topReview = event.reviews?.length > 0 
@@ -279,7 +294,7 @@ export const getEventDetailReport = async (req, res) => {
       data: {
         eventid: event._id.toString(),
         eventname: event.name,
-        volunteerno: event.volunteersAssigned?.length || 0,
+        volunteerno: volunteerCount,
         participantno: participantCount,
         review: {
           noOfstar: averageRating,
