@@ -59,17 +59,6 @@ const SpeechRecognizer = () => {
   };
 
   // Global keyboard shortcut: Press "S" to activate
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "s") {
-        console.log("🎤 Starting speech recognition via keypress");
-        startSpeechRecognition();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyPress);
-    return () => document.removeEventListener("keydown", handleKeyPress);
-  }, []);
 
   return (
     <>

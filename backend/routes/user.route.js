@@ -10,6 +10,7 @@ import {
   assignTaskToUser,
   requestVolunteerForEvent,
   getIdOfVolunteer,
+  tempHandler
 } from "../controllers/user.controller.js"; // Import controller
 
 const router = express.Router();
@@ -46,5 +47,7 @@ router.post("/register-for-event", requestVolunteerForEvent);
 
 // Route to get user by ID
 router.get("/:id", getUserById);
+
+router.post('/registerVolunteerOrPart', tempHandler)
 
 export default router;

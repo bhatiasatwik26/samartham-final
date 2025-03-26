@@ -456,7 +456,8 @@ const ReportCharts: React.FC<ReportChartsProps> = ({ reports = [], categoryStats
                         maintainAspectRatio: false,
                         scales: {
                           y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            max: 8
                           }
                         }
                       }} 

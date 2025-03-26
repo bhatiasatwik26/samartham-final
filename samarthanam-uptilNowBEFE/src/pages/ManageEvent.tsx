@@ -465,73 +465,8 @@ const ManageEvent = () => {
           </CardContent>
         </Card>
 
-        {/* Volunteers Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Potential Volunteers */}
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-red-100 dark:border-red-900/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-full">
-                  <User className="h-6 w-6 text-red-600 dark:text-red-400" />
-                </div>
-                Potential Volunteers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading.volunteers ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {suggestedVolunteers.map((volunteer) => (
-                    <VolunteerCard key={volunteer.id} volunteer={volunteer} isPotential />
-                  ))}
-                  {suggestedVolunteers.length === 0 && (
-                    <div className="text-center py-8">
-                      <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400">No potential volunteers found</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Registered Volunteers */}
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-red-100 dark:border-red-900/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-full">
-                  <User className="h-6 w-6 text-red-600 dark:text-red-400" />
-                </div>
-                Registered Volunteers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading.volunteers ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {registeredVolunteers.map((volunteer) => (
-                    <VolunteerCard key={volunteer.id} volunteer={volunteer} />
-                  ))}
-                  {registeredVolunteers.length === 0 && (
-                    <div className="text-center py-8">
-                      <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400">No registered volunteers yet</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Task Assignment Section */}
-        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-red-100 dark:border-red-900/20">
+        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-red-100 dark:border-red-900/20 mb-10">
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
               <span className="text-xl">Task Assignment</span>
@@ -619,6 +554,71 @@ const ManageEvent = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Volunteers Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Potential Volunteers */}
+          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-red-100 dark:border-red-900/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-full">
+                  <User className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                Potential Volunteers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading.volunteers ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {suggestedVolunteers.map((volunteer) => (
+                    <VolunteerCard key={volunteer.id} volunteer={volunteer} isPotential />
+                  ))}
+                  {suggestedVolunteers.length === 0 && (
+                    <div className="text-center py-8">
+                      <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500 dark:text-gray-400">No potential volunteers found</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Registered Volunteers */}
+          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-red-100 dark:border-red-900/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-full">
+                  <User className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                Registered Volunteers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading.volunteers ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {registeredVolunteers.map((volunteer) => (
+                    <VolunteerCard key={volunteer.id} volunteer={volunteer} />
+                  ))}
+                  {registeredVolunteers.length === 0 && (
+                    <div className="text-center py-8">
+                      <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500 dark:text-gray-400">No registered volunteers yet</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <Footer />

@@ -3,6 +3,7 @@ import Event from "../model/Event.model.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { sendEmail } from "../utils/email.utils.js";
+import Participant from "../model/Participant.model.js";
 dotenv.config({ path: "../.env" });
 
 // get users details by id
@@ -270,33 +271,25 @@ export const assignTaskToUser = async (req, res) => {
 
     // Validate input
     if (!userId || !eventId || !taskName) {
-      return res
-        .status(400)
-        .json({ message: "User ID, Event ID, and Task Name are required" });
+      return res.status(400).json({ message: "User ID, Event ID, and Task Name are required" });
     }
 
     // Validate MongoDB ObjectId
-    if (
-      !mongoose.Types.ObjectId.isValid(userId) ||
-      !mongoose.Types.ObjectId.isValid(eventId)
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Invalid User ID or Event ID format" });
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid User ID or Event ID format" });
     }
 
-    // Find the user
+    // Find user and update eventsSubscribed
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if user is already subscribed to the event
     let eventSubscription = user.eventsSubscribed.find(
       (event) => event.eventId.toString() === eventId
     );
 
-    // If user is not subscribed to the event, add the event subscription
+    // If user is not subscribed, add event
     if (!eventSubscription) {
       eventSubscription = {
         eventId,
@@ -305,31 +298,26 @@ export const assignTaskToUser = async (req, res) => {
       user.eventsSubscribed.push(eventSubscription);
     }
 
-    // Add the task to the user's assigned tasks for this event
+    // Add task to assignedTasks
     eventSubscription.assignedTasks.push({
       name: taskName,
       status: status || "pending",
       deadline: deadline ? new Date(deadline) : null,
     });
 
-    // Save the updated user
-    await user.save();
-
-    // If this is their first task, increment eventsVolunteered if it's 0
-    if (user.eventsVolunteered === 0) {
-      user.eventsVolunteered = 1;
-      await user.save();
-    }
-
-    sendEmail(
-      user.email,
-      "Task Assigned",
-      `You have been assigned a task for ${taskName} in event ${eventId}. Please complete it by ${deadline}.`
+    // Update in DB using `findByIdAndUpdate`
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { eventsSubscribed: user.eventsSubscribed }, $inc: { eventsVolunteered: user.eventsVolunteered === 0 ? 1 : 0 } },
+      { new: true, runValidators: false } // `runValidators: false` to avoid password validation
     );
+
+    const event = await Event.findById(eventId)
+    sendEmail(user.email, "taskAssigned", {name: user.name, task: taskName, eventName: event.name, deadline: deadline});
 
     res.status(200).json({
       message: "Task assigned successfully",
-      user,
+      user: updatedUser,
     });
   } catch (error) {
     console.error("Error assigning task:", error);
@@ -426,5 +414,66 @@ export const getIdOfVolunteer = async (req, res) => {
   } catch (error) {
     console.error("Error fetching user ID:", error);
     res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+};
+
+export const tempHandler = async (req, res) => {
+  console.log(req.body);
+  try {
+      const { email, participationType, eventId } = req.body;  
+      
+
+      if (!email || !participationType || !eventId) {
+          return res.status(400).json({ message: "Email, type, and eventId are required." });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(eventId)) {
+          return res.status(400).json({ message: "Invalid Event ID format." });
+      }
+
+      if (participationType === 'participant') {
+          // Add event to participant's participatedEvents
+          const participant = await Participant.findOneAndUpdate(
+              { email },
+              { 
+                  $addToSet: { 
+                      participatedEvents: { eventId, status: "registered" } 
+                  } 
+              },
+              { new: true, upsert: true } // Create participant if not found
+          );
+
+          if (!participant) {
+              return res.status(404).json({ message: "Participant not found." });
+          }
+
+          return res.status(200).json({
+              message: "Event added to participant successfully.",
+              participant
+          });
+      } else {
+          // Add event to user's eventsSubscribed
+          const user = await User.findOneAndUpdate(
+              { email },
+              { 
+                  $addToSet: { 
+                      eventsSubscribed: { eventId, assignedTasks: [] } 
+                  } 
+              },
+              { new: true, upsert: true } // Create user if not found
+          );
+
+          if (!user) {
+              return res.status(404).json({ message: "Volunteer not found." });
+          }
+
+          return res.status(200).json({
+              message: "Event added to volunteer successfully.",
+              user
+          });
+      }
+  } catch (error) {
+      console.error("Error in tempHandler:", error);
+      res.status(500).json({ message: "Internal Server Error" });
   }
 };

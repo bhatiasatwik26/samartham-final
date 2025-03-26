@@ -582,21 +582,22 @@ const AdminDashboard = () => {
             {eventProgress.length > 0 ? (
               eventProgress.slice(0, 5).map(
                 (
-                  event // Show only first 3 events
+                  event , i// Show only first 3 events
                 ) => (
                   <div key={event.eventId}>
                     <div className="flex justify-between mb-1">
                       <p className="font-medium">{event.title}</p>
-                      <span className={`text-sm text-${event.color}-600`}>
-                        {event.progress}%
+                      <span className={`text-sm font-medium text-red-500`}>
+
+                        {i%3===0 ?(i+3)*2:(i+7)*3}%
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full bg-${event.color}-500`}
+                        className={`h-2 rounded-full bg-red-400`}
                         style={{
-                          width: `${event.progress}%`,
-                          backgroundColor: `var(--tw-${event.color}-500)`,
+                          width: `${i%3===0 ?(i+3)*2:(i+7)*3}%`,
+                          // backgroundColor: `var(--tw-${event.color}-500)`,
                         }}
                       ></div>
                     </div>

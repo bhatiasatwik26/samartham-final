@@ -298,9 +298,7 @@ const EventDetail = () => {
               subtitle={event.category}
              
             />
-          )}
-       
-      )}
+          )}  
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 
 interface RegistrationFormProps {
   title: string;
@@ -17,6 +18,7 @@ const RegistrationForm = ({ title, subtitle }: RegistrationFormProps) => {
   const { ref, isVisible } = useInView();
   const [loading, setLoading] = useState(false);
   const [participationType, setParticipationType] = useState<string>("");
+  const { id } = useParams<{ id: string }>();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,11 +33,12 @@ const RegistrationForm = ({ title, subtitle }: RegistrationFormProps) => {
       participationType: formData.get("participationType") as string,
       message: formData.get("message") as string,
       terms: formData.get("terms") ? "accepted" : "not accepted",
+      eventId:id
     };
     console.log(values);
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/event/register`, {
+      const response = await fetch(`http://localhost:3000/api/user/registerVolunteerOrPart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,9 +46,7 @@ const RegistrationForm = ({ title, subtitle }: RegistrationFormProps) => {
         body: JSON.stringify(values),
       });
 
-      toast.success("Participant registration successful!", {
-        description: `Reference ID: ${response.data.refId}`,
-      });
+      toast.success("Participant registration successful!");
     } catch (error) {
       console.error("Participant registration failed:", error);
       toast.error("Failed to register as Participant.");
