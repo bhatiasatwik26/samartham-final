@@ -15,7 +15,7 @@ const fetchUserData = async (): Promise<{
 }> => {
   try {
     const response = await fetch(
-      "http://localhost:3000/api/user/67e0eec080a452dbf9288b50",
+      "http://localhost:3000/api/user/67e30f95380f216d0a365e8f",
       {
         method: "GET",
         credentials: "include",
