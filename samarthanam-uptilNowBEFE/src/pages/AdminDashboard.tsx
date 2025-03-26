@@ -28,7 +28,8 @@ import adminApi, {
   EventProgress,
   Volunteer,
   VolunteerOverview,
-  Reports,
+  ReportData,
+  CategoryStats,
 } from "@/services/adminApi";
 import { useToast } from "@/components/ui/use-toast";
 import ReportCharts from "@/components/ReportCharts";
@@ -43,7 +44,8 @@ const AdminDashboard = () => {
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
   const [currentVolunteer, setCurrentVolunteer] = useState<any>(null);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
-  const [reports, setReports] = useState<Reports[]>([]);
+  const [reports, setReports] = useState<ReportData[]>([]);
+  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [newVolunteer, setNewVolunteer] = useState({
     name: "",
     email: "",
@@ -202,14 +204,18 @@ const AdminDashboard = () => {
   const fetchEventStats = async () => {
     setIsLoading((prev) => ({ ...prev, generateReport: true }));
     try {
-      // Use the adminApi instead of direct fetch
+      // Fetch event statistics
       const stats = await adminApi.getAllStats();
       setReports(stats);
+      
+      // Also fetch category statistics
+      const catStats = await adminApi.getCategoryStats();
+      setCategoryStats(catStats);
     } catch (error) {
-      console.error("Error fetching event stats:", error);
+      console.error("Error fetching statistics:", error);
       toast({
         title: "Error",
-        description: "Failed to load event stats",
+        description: "Failed to load statistics data",
         variant: "destructive",
       });
     } finally {
@@ -259,13 +265,24 @@ const AdminDashboard = () => {
     }
   };
 
+  // Switch to the reports section and load data if needed
+  const handleReportsClick = () => {
+    setActiveSection("reports");
+    // Fetch event statistics if they haven't been loaded yet
+    if (reports.length === 0) {
+      fetchEventStats();
+    }
+    // Close mobile menu if it's open
+    setIsMobileMenuOpen(false);
+  };
+
   // Navigation items
   const navItems = [
-    { icon: <Home size={20} />, label: "Dashboard", section: "dashboard" },
-    { icon: <Users size={20} />, label: "Volunteers", section: "volunteers" },
-    { icon: <Calendar size={20} />, label: "Events", section: "events" },
-    { icon: <BarChart3 size={20} />, label: "Reports", section: "reports" },
-    { icon: <Settings size={20} />, label: "Settings", section: "settings" },
+    { icon: <Home size={20} />, label: "Dashboard", section: "dashboard", onClick: () => { setActiveSection("dashboard"); setIsMobileMenuOpen(false); } },
+    { icon: <Users size={20} />, label: "Volunteers", section: "volunteers", onClick: () => { setActiveSection("volunteers"); setIsMobileMenuOpen(false); } },
+    { icon: <Calendar size={20} />, label: "Events", section: "events", onClick: () => { setActiveSection("events"); setIsMobileMenuOpen(false); } },
+    { icon: <BarChart3 size={20} />, label: "Reports", section: "reports", onClick: handleReportsClick },
+    { icon: <Settings size={20} />, label: "Settings", section: "settings", onClick: () => { setActiveSection("settings"); setIsMobileMenuOpen(false); } },
   ];
 
   const handleInputChange = (
@@ -462,6 +479,21 @@ const AdminDashboard = () => {
     } else {
       setSelectedCategories([...selectedCategories, category]);
     }
+  };
+
+  const renderReports = () => {
+    if (isLoading.generateReport) {
+      return (
+        <div className="p-8">
+          <h1 className="text-2xl font-bold mb-8">Reports and Analytics</h1>
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mb-4"></div>
+            <p className="text-gray-500">Loading report data...</p>
+          </div>
+        </div>
+      );
+    }
+    return <ReportCharts reports={reports} categoryStats={categoryStats} />;
   };
 
   // Render Dashboard section
@@ -1365,19 +1397,6 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const dummyReports = [
-    { eventname: "Tech Meetup", volunteer: 35, participant: 120 },
-    { eventname: "Charity Run", volunteer: 50, participant: 200 },
-    { eventname: "Blood Donation Camp", volunteer: 40, participant: 150 },
-    { eventname: "Tree Plantation Drive", volunteer: 30, participant: 100 },
-    { eventname: "Coding Hackathon", volunteer: 45, participant: 180 },
-    { eventname: "Health Camp", volunteer: 25, participant: 90 },
-  ];
-
-  const renderReports = () => {
-    return <ReportCharts reports={reports} />;
-  };
-
   // Render content based on active section
   const renderContent = () => {
     switch (activeSection) {
@@ -1726,7 +1745,7 @@ const AdminDashboard = () => {
                           ? "bg-red-600 text-white shadow-lg shadow-red-600/30 scale-105"
                           : "hover:bg-white dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 hover:scale-105 hover:shadow-md"
                       }`}
-                      onClick={() => setActiveSection(item.section)}
+                      onClick={item.onClick}
                     >
                       <span
                         className={`mr-3 transition-transform duration-300 ${
@@ -1811,10 +1830,7 @@ const AdminDashboard = () => {
                               ? "bg-red-600 text-white"
                               : "text-gray-700 dark:text-gray-200"
                           }`}
-                          onClick={() => {
-                            setActiveSection(item.section);
-                            setIsMobileMenuOpen(false);
-                          }}
+                          onClick={item.onClick}
                         >
                           <span className="mr-3">{item.icon}</span>
                           <span className="font-medium">{item.label}</span>

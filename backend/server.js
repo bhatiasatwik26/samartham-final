@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.route.js";
 import eventRoutes from "./routes/event.route.js";
 import emailRoutes from "./routes/email.routes.js";
 import participantRoutes from "./routes/participant.routes.js";
+import reportRoutes from "./routes/report.route.js"; // Import report routes
 import cors from "cors";
 import  "./cronJobs/taskReminder.js"; // import and execute the cron job for sending task reminder emails at 8:00AM daily.
 
@@ -51,6 +52,7 @@ app.use("/api/user", userRoutes); // user routes
 app.use("/api/event", eventRoutes); // event route
 app.use("/api/email", emailRoutes); // email route
 app.use("/api/participant", participantRoutes);  // participant route
+app.use("/api/reports", reportRoutes); // report routes
 
 app.get("/", (req, res) => {
   res.send("API is running...");

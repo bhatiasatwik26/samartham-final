@@ -27,7 +27,7 @@ export interface Reports {
 
 export interface RecentActivity {
   id: string;
-  type:
+  type?:
     | "volunteer_joined"
     | "event_created"
     | "task_completed"
@@ -45,7 +45,7 @@ export interface EventProgress {
 }
 
 export interface Volunteer {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
   phone: string;
@@ -62,7 +62,7 @@ export interface VolunteerOverview {
 }
 
 export interface Event {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   date: string;
@@ -71,18 +71,61 @@ export interface Event {
   status: "upcoming" | "active" | "completed";
 }
 
-const getRandomColor = () => {
-  const colors = ["red", "blue", "green", "yellow", "orange"];
+// Add reports interfaces
+export interface ReportData {
+  eventname: string;
+  volunteer: number;
+  participant: number;
+  category?: string;
+  rating?: string;
+  imageUrl?: string;
+  date?: string;
+}
 
+export interface CategoryStats {
+  category: string;
+  eventCount: number;
+  volunteerCount: number;
+}
+
+// Add event detail interface
+export interface EventDetailReport {
+  eventid: string;
+  eventname: string;
+  volunteerno: number;
+  participantno: number;
+  review: {
+    noOfstar: string;
+    review: string;
+  };
+  ratingDistribution: {
+    five: number;
+    four: number;
+    three: number;
+    two: number;
+    one: number;
+  };
+  allReviews: string[];
+}
+
+// Helper function to assign a random color
+const getRandomColor = (): "green" | "blue" | "orange" | "purple" => {
+  const colors: ("green" | "blue" | "orange" | "purple")[] = [
+    "green",
+    "blue",
+    "orange",
+    "purple",
+  ];
   return colors[Math.floor(Math.random() * colors.length)];
 };
 
 // Admin Dashboard API service
 const adminApi = {
+  // Get dashboard stats
   getDashboardStats: async (): Promise<DashboardStats> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/event/overview`);
-      return response.data;
+      const response = await axios.get(`${API_BASE_URL}/reports/dashboard`);
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       // Return fallback data when API fails
@@ -98,29 +141,26 @@ const adminApi = {
   // Get recent activities
   getRecentActivities: async (): Promise<RecentActivity[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/admin/activities`);
-      return response.data;
+      const response = await axios.get(`${API_BASE_URL}/reports/activities`);
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching recent activities:", error);
       // Return fallback data when API fails
       return [
         {
           id: "1",
-          type: "volunteer_joined",
           title: "New volunteer joined",
           description: "Sarah Williams registered as a volunteer",
           timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         },
         {
           id: "2",
-          type: "event_created",
           title: "Event created",
           description: 'New event "Community Health Camp" added',
           timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         },
         {
           id: "3",
-          type: "task_completed",
           title: "Task completed",
           description: "Volunteer training session completed",
           timestamp: new Date(
@@ -132,7 +172,6 @@ const adminApi = {
   },
 
   // Get event progress data
-
   getEventProgress: async (): Promise<EventProgress[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/event/progress`);
@@ -157,29 +196,17 @@ const adminApi = {
       return transformedData;
     } catch (error) {
       console.error("Error fetching event progress:", error);
+      return [];
     }
   },
 
   // Get volunteer overview
   getVolunteerOverview: async (): Promise<VolunteerOverview> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/user/volunteers`);
-
-      // Count active and new volunteers
-      const activeVolunteers = response.data.filter((user: any) =>
-        user.eventsSubscribed.some(
-          (event: any) => event.assignedTasks && event.assignedTasks.length > 0
-        )
-      ).length;
-
-      const newVolunteers = response.data.length - activeVolunteers;
-
-      return {
-        activeVolunteers,
-        newVolunteers,
-      };
+      const response = await axios.get(`${API_BASE_URL}/reports/volunteer-overview`);
+      return response.data.data;
     } catch (error) {
-      console.error("Error fetching volunteers:", error);
+      console.error("Error fetching volunteer overview:", error);
 
       // Fallback in case of an error
       return {
@@ -190,7 +217,6 @@ const adminApi = {
   },
 
   // Get all volunteers
-
   getVolunteers: async (): Promise<Volunteer[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/user/volunteers`);
@@ -347,18 +373,38 @@ const adminApi = {
     }
   },
 
-  getAllStats: async (): Promise<Reports[]> => {
-    console.log("Ok");
+  // Get all event stats for reports
+  getAllStats: async (): Promise<ReportData[]> => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/event/getAllEventStats`
-      );
-      console.log(response.data);
-      return response.data;
+      const response = await axios.get(`${API_BASE_URL}/reports/events`);
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching event stats:", error);
       return [];
     }
   },
+
+  // Get category stats for reports
+  getCategoryStats: async (): Promise<CategoryStats[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/reports/categories`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching category stats:", error);
+      return [];
+    }
+  },
+
+  // Get detailed report for a specific event
+  getEventDetailReport: async (eventName: string): Promise<EventDetailReport | null> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/reports/event/${encodeURIComponent(eventName)}/detail`);
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error fetching detailed report for event ${eventName}:`, error);
+      return null;
+    }
+  }
 };
+
 export default adminApi;
