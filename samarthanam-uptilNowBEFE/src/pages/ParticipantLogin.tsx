@@ -27,7 +27,7 @@ const ParticipantLogin = () => {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/participants/login`, {
+      const response = await fetch(`${API_BASE_URL}/participant/login`, {
         method: "POST",
         credentials: "include",
         headers: {

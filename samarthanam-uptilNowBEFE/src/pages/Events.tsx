@@ -24,12 +24,94 @@ import {
   AlarmClock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Event } from "@/data/events";
+// import { Event } from "@/data/events";
 import Header from "@/components/Header";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { fetchEvents, registerForEvent } from "@/services/eventsApi";
+
+// Geographical Location Interface
+interface GeographicalLocation {
+  type: string;
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
+// Ratings Interface
+interface Ratings {
+  "1": number;
+  "2": number;
+  "3": number;
+  "4": number;
+  "5": number;
+}
+
+// Schedule Item Interface
+interface ScheduleItem {
+  time: string;
+  heading: string;
+  details: string;
+  _id: string;
+}
+
+// Main Event Interface
+interface Event {
+  _id: string;
+  name: string;
+  location: string;
+  date: string;
+  description: string;
+  photos: string[];
+  category: string;
+  registrationStart: string;
+  registrationEnd: string;
+  eventStart: string;
+  eventEnd: string;
+  geographicalLocation: GeographicalLocation;
+  ratings: Ratings;
+  reviews: string[];
+  schedule: ScheduleItem[];
+  volunteersAssigned: string[]; // Array of volunteer IDs or empty if none
+  __v: number;
+}
+
+const formatDate = (timestamp) => {
+  try {
+    const date = new Date(timestamp);
+
+    if (isNaN(date.getTime())) {
+      throw new Error("Invalid date format");
+    }
+
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch (error) {
+    console.error("Error parsing date:", error);
+    return "Invalid date";
+  }
+};
+
+const formatTime = (timestamp) => {
+  try {
+    const date = new Date(timestamp);
+
+    if (isNaN(date.getTime())) {
+      throw new Error("Invalid date format");
+    }
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // Ensures AM/PM format
+    });
+  } catch (error) {
+    console.error("Error parsing time:", error);
+    return "Invalid time";
+  }
+};
 
 const Events = () => {
   const { ref, isVisible } = useInView();
@@ -42,11 +124,10 @@ const Events = () => {
 
   // Create categories based on event subtitles
   const eventCategories = useMemo(
-    () => ["All", ...new Set(events.map((event) => event.subtitle))],
+    () => ["All", ...new Set(events.map((event) => event.category))],
     [events]
   );
 
-  // Fetch events from API
   useEffect(() => {
     const getEvents = async () => {
       try {
@@ -72,56 +153,69 @@ const Events = () => {
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       const matchesCategory =
-        selectedCategory === "All" || event.subtitle === selectedCategory;
+        selectedCategory === "All" || event.category === selectedCategory;
+
       const matchesSearch =
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchQuery.toLowerCase());
+        (event.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
+        (event.description?.toLowerCase() ?? "").includes(
+          searchQuery.toLowerCase()
+        ) ||
+        (event.location?.toLowerCase() ?? "").includes(
+          searchQuery.toLowerCase()
+        );
+
       return matchesCategory && matchesSearch;
     });
   }, [selectedCategory, searchQuery, events]);
 
-  // Get upcoming events (events with future dates)
-  const upcomingEvents = useMemo(() => {
-    const today = new Date();
-    return filteredEvents.filter((event) => {
-      try {
-        // Handle date formats like "October 15, 2023" or "November 5-7, 2023"
-        const dateStr = event.date.split("-")[0].trim(); // Get first part if there's a range
-        const eventDate = new Date(dateStr);
-        return eventDate >= today;
-      } catch (e) {
-        // If date parsing fails, include the event
-        return true;
-      }
-    });
-  }, [filteredEvents]);
-
-  const displayedEvents = useMemo(() => {
-    if (activeTab === "upcoming") return upcomingEvents;
-    return filteredEvents;
-  }, [activeTab, filteredEvents, upcomingEvents]);
-
-  // Handle event registration
-  const handleRegister = async (eventId: string) => {
+  const formatEventDate = (dateStr: string) => {
     try {
-      // In a real app, you'd get the userId from auth context
-      const userId = "user123";
-      const result = await registerForEvent(eventId, userId);
-
-      if (result.success) {
-        // Show success notification or redirect to confirmation page
-        console.log(result.message);
-        alert(
-          "Registration successful! You are now registered for this event."
-        );
-      }
-    } catch (err) {
-      console.error("Registration failed:", err);
-      alert("Registration failed. Please try again later.");
+      const dateParts = dateStr.split("-")[0].trim();
+      const eventDate = new Date(dateParts);
+      return eventDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (error) {
+      console.error("Invalid date format:", dateStr);
+      return "Invalid date";
     }
   };
 
+  // Get upcoming events (events with future dates)
+  // const upcomingEvents = useMemo(() => {
+  //   const today = new Date();
+  //   return filteredEvents.filter((event) => {
+  //     try {
+  //       // Handle date formats like "October 15, 2023" or "November 5-7, 2023"
+  //       const dateStr = event.date.split("-")[0].trim(); // Get first part if there's a range
+  //       const eventDate = new Date(dateStr);
+  //       return eventDate >= today;
+  //     } catch (e) {
+  //       // If date parsing fails, include the event
+  //       return true;
+  //     }
+  //   });
+  // }, [filteredEvents]);
+
+  const displayedEvents = useMemo(() => {
+    // if (activeTab === "upcoming") return upcomingEvents;
+    return filteredEvents;
+  }, [activeTab, filteredEvents]);
+
+  // Handle event registration
+  // const handleRegister = async (eventId: string, userId: string) => {
+  //   try {
+  //     const result = await registerForEvent(eventId, userId);
+  //     if (result.success) {
+  //       alert("Registration successful!");
+  //     }
+  //   } catch (err) {
+  //     console.error("Registration failed:", err);
+  //     alert("Registration failed. Please try again later.");
+  //   }
+  // };
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -234,7 +328,7 @@ const Events = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex overflow-hidden rounded-md border border-red-200 dark:border-red-800">
+            {/* <div className="flex overflow-hidden rounded-md border border-red-200 dark:border-red-800">
               <button
                 className={`px-4 py-2 text-sm font-medium ${
                   activeTab === "all"
@@ -255,32 +349,32 @@ const Events = () => {
               >
                 Upcoming
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* Event Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {displayedEvents.map((event) => (
               <Card
-                key={event.id}
+                key={event._id}
                 className="overflow-hidden group border-red-200 dark:border-red-800 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-xl"
               >
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={event.imageUrl}
-                    alt={event.title}
+                    src={event.photos[0]}
+                    alt={event.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="absolute top-4 left-4">
                     <Badge className="bg-red-600/90 hover:bg-red-700/90 backdrop-blur-sm text-white">
-                      {event.subtitle}
+                      {event.category}
                     </Badge>
                   </div>
                 </div>
                 <CardHeader>
                   <CardTitle className="text-xl font-serif group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
-                    {event.title}
+                    {event.name}
                   </CardTitle>
                   <CardDescription className="line-clamp-2 mt-2 text-red-800 dark:text-slate-400">
                     {event.description}
@@ -290,35 +384,29 @@ const Events = () => {
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center text-slate-600 dark:text-slate-300">
                       <CalendarIcon size={16} className="mr-2 text-red-500" />
-                      <span>{event.date}</span>
+                      <span>{formatDate(event.eventStart)}</span>
                     </div>
                     <div className="flex items-center text-slate-600 dark:text-slate-300">
                       <Clock size={16} className="mr-2 text-red-500" />
-                      <span>{event.time}</span>
+                      <span>{formatTime(event.eventStart)}</span>
                     </div>
                     <div className="flex items-center text-slate-600 dark:text-slate-300">
                       <MapPin size={16} className="mr-2 text-red-500" />
                       <span>{event.location}</span>
                     </div>
-                    <div className="flex items-center text-slate-600 dark:text-slate-300">
+                    {/* <div className="flex items-center text-slate-600 dark:text-slate-300">
                       <Users size={16} className="mr-2 text-red-500" />
                       <span>
                         Participants required:{" "}
                         {20 + Math.floor(Math.random() * 30)}
                       </span>
-                    </div>
+                    </div> */}
+
                     <div className="flex items-center text-slate-600 dark:text-slate-300">
                       <AlarmClock size={16} className="mr-2 text-red-500" />
                       <span>
                         Registration deadline:{" "}
-                        {new Date(
-                          new Date(event.date.split("-")[0].trim()).getTime() -
-                            7 * 24 * 60 * 60 * 1000
-                        ).toLocaleDateString("en-US", {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {formatDate(event.registrationEnd)}
                       </span>
                     </div>
                   </div>
@@ -334,7 +422,7 @@ const Events = () => {
                     className="w-full sm:w-auto bg-red-600 hover:bg-red-800 text-white transition-colors"
                   >
                     <Link
-                      to={`/event/${event.id}`}
+                      to={`/event/${event._id}`}
                       className="flex items-center justify-center"
                     >
                       Register <ArrowRight className="ml-2 h-4 w-4" />
@@ -362,18 +450,18 @@ const Events = () => {
                 Don't miss these highly anticipated events
               </p>
             </div>
-            <Link
+            {/* <Link
               to="/events"
               className="text-red-600 dark:text-red-400 font-medium flex items-center hover:underline hidden md:flex"
             >
               View all <ArrowUpRight className="ml-1 h-4 w-4" />
-            </Link>
+            </Link> */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {featuredEvents.map((event) => (
               <div
-                key={event.id}
+                key={event._id}
                 className="group relative overflow-hidden rounded-xl bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <div className="absolute top-4 right-4 z-10">
@@ -384,21 +472,21 @@ const Events = () => {
                 <div className="flex flex-col md:flex-row h-full">
                   <div className="md:w-2/5 h-64 md:h-auto relative overflow-hidden">
                     <img
-                      src={event.imageUrl}
-                      alt={event.title}
+                      src={event.photos[0]}
+                      alt={event.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div className="absolute bottom-4 left-4">
                       <Badge className="bg-red-600 hover:bg-red-700">
-                        {event.subtitle}
+                        {event.category}
                       </Badge>
                     </div>
                   </div>
                   <div className="md:w-3/5 p-6 flex flex-col justify-between">
                     <div>
                       <h3 className="text-xl font-serif font-bold mb-2 group-hover:text-red-600 dark:group-hover:text-red-400">
-                        {event.title}
+                        {event.name}
                       </h3>
                       <p className="text-red-800 dark:text-slate-400 mb-4 line-clamp-2">
                         {event.description}
@@ -409,23 +497,24 @@ const Events = () => {
                             size={16}
                             className="mr-2 text-red-500"
                           />
-                          <span>{event.date}</span>
+                          <span>{formatDate(event.eventStart)}</span>
                         </div>
                         <div className="flex items-center text-slate-600 dark:text-slate-300">
                           <Clock size={16} className="mr-2 text-red-500" />
-                          <span>{event.time}</span>
+                          <span>{formatTime(event.eventStart)}</span>
                         </div>
                         <div className="flex items-center text-slate-600 dark:text-slate-300">
                           <MapPin size={16} className="mr-2 text-red-500" />
                           <span>{event.location}</span>
                         </div>
-                        <div className="flex items-center text-slate-600 dark:text-slate-300">
+                        {/* <div className="flex items-center text-slate-600 dark:text-slate-300">
                           <Users size={16} className="mr-2 text-red-500" />
                           <span>
                             Participants required:{" "}
                             {20 + Math.floor(Math.random() * 30)}
                           </span>
-                        </div>
+                        </div> */}
+                        {event.category}
                         <div className="flex items-center text-slate-600 dark:text-slate-300 col-span-2">
                           <AlarmClock size={16} className="mr-2 text-red-500" />
                           <span>
@@ -448,7 +537,7 @@ const Events = () => {
                         className="w-full bg-red-600 hover:bg-red-800 text-white transition-colors"
                       >
                         <Link
-                          to={`/event/${event.id}`}
+                          to={`/event/${event._id}`}
                           className="flex items-center justify-center"
                         >
                           Register <ArrowRight className="ml-2 h-4 w-4" />

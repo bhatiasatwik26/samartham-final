@@ -83,7 +83,7 @@ export const updateTaskStatus = async (req, res) => {
     }
 
     // Find the user
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -96,7 +96,6 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(404).json({ message: "Event not found for this user" });
     }
 
-    // Find the task inside assignedTasks
     const task = event.assignedTasks.find((task) => task.name === taskName);
     if (!task) {
       return res.status(404).json({ message: "Task not found in this event" });
@@ -104,6 +103,7 @@ export const updateTaskStatus = async (req, res) => {
 
     // Update task status
     task.status = status;
+    console.log("Ok1");
 
     // Save the updated user
     await user.save();
@@ -115,56 +115,77 @@ export const updateTaskStatus = async (req, res) => {
   }
 };
 
-
 export const getAllVolunteers = async (req, res) => {
   try {
-      // Fetch all users (volunteers don't need to have volunteered yet)
-      const volunteers = await User.find();
+    // Fetch all users (volunteers don't need to have volunteered yet)
+    const volunteers = await User.find();
 
-      if (volunteers.length === 0) {
-          return res.status(404).json({ message: "No volunteers found." });
-      }
+    if (volunteers.length === 0) {
+      return res.status(404).json({ message: "No volunteers found." });
+    }
 
-      res.status(200).json(volunteers);
+    res.status(200).json(volunteers);
   } catch (error) {
-      console.error("Error fetching volunteers:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error fetching volunteers:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 // Register a Volunteer
 export const registerVolunteer = async (req, res) => {
   try {
-      const { email, name, interestedCategories, interestedTasks, skills, availability } = req.body;
+    const {
+      email,
+      name,
+      interestedCategories,
+      interestedTasks,
+      skills,
+      availability,
+    } = req.body;
 
-      // Check if the user already exists
-      let user = await User.findOne({ email });
+    // Check if the user already exists
 
-      if (user) {
-          return res.status(400).json({ message: "User already registered as a volunteer!" });
-      }
+    let user = await User.findOne({ email });
 
-      // Create a new user with volunteer role
-      user = new User({
-          email,
-          name,
-          interestedCategories,
-          interestedTasks,
-          skills,
-          availability,
-      });
+    if (user) {
+      return res
+        .status(400)
+        .json({ message: "User already registered as a volunteer!" });
+    }
 
-      await user.save();
-      res.status(201).json({ message: "Volunteer registered successfully!", user });
+    // Create a new user with volunteer role
+    user = new User({
+      email,
+      password: email,
+      name,
+      interestedCategories,
+      interestedTasks,
+      skills,
+      availability,
+    });
+
+    await user.save();
+    res
+      .status(201)
+      .json({ message: "Volunteer registered successfully!", user });
   } catch (error) {
-      res.status(500).json({ message: "Server Error", error: error.message });
+    console.log(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
 // Add a new volunteer
 export const addVolunteer = async (req, res) => {
   try {
-    const { name, email, phone, address, interests, interestedCategories, status } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      address,
+      interests,
+      interestedCategories,
+      status,
+    } = req.body;
 
     // Basic validation
     if (!name || !email) {
@@ -174,7 +195,9 @@ export const addVolunteer = async (req, res) => {
     // Check if the volunteer already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "A volunteer with that email already exists" });
+      return res
+        .status(400)
+        .json({ message: "A volunteer with that email already exists" });
     }
 
     // Create a new user
@@ -189,7 +212,7 @@ export const addVolunteer = async (req, res) => {
 
     res.status(201).json({
       message: "Volunteer added successfully",
-      volunteer: newUser
+      volunteer: newUser,
     });
   } catch (error) {
     console.error("Error adding volunteer:", error);
@@ -201,7 +224,16 @@ export const addVolunteer = async (req, res) => {
 export const updateVolunteer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, address, interests, interestedCategories, events, status } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      address,
+      interests,
+      interestedCategories,
+      events,
+      status,
+    } = req.body;
 
     // Validate MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -217,13 +249,13 @@ export const updateVolunteer = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (interestedCategories) user.interestedCategories = interestedCategories;
-    
+
     // Save the updated user
     await user.save();
 
     res.status(200).json({
       message: "Volunteer updated successfully",
-      volunteer: user
+      volunteer: user,
     });
   } catch (error) {
     console.error("Error updating volunteer:", error);
@@ -238,12 +270,19 @@ export const assignTaskToUser = async (req, res) => {
 
     // Validate input
     if (!userId || !eventId || !taskName) {
-      return res.status(400).json({ message: "User ID, Event ID, and Task Name are required" });
+      return res
+        .status(400)
+        .json({ message: "User ID, Event ID, and Task Name are required" });
     }
 
     // Validate MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
-      return res.status(400).json({ message: "Invalid User ID or Event ID format" });
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(eventId)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid User ID or Event ID format" });
     }
 
     // Find the user
@@ -282,11 +321,15 @@ export const assignTaskToUser = async (req, res) => {
       await user.save();
     }
 
-    sendEmail(user.email, "Task Assigned", `You have been assigned a task for ${taskName} in event ${eventId}. Please complete it by ${deadline}.`);
+    sendEmail(
+      user.email,
+      "Task Assigned",
+      `You have been assigned a task for ${taskName} in event ${eventId}. Please complete it by ${deadline}.`
+    );
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Task assigned successfully",
-      user
+      user,
     });
   } catch (error) {
     console.error("Error assigning task:", error);
@@ -301,12 +344,19 @@ export const requestVolunteerForEvent = async (req, res) => {
 
     // Validate input
     if (!userId || !eventId) {
-      return res.status(400).json({ message: "User ID and Event ID are required" });
+      return res
+        .status(400)
+        .json({ message: "User ID and Event ID are required" });
     }
 
     // Validate MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
-      return res.status(400).json({ message: "Invalid User ID or Event ID format" });
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(eventId)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid User ID or Event ID format" });
     }
 
     // Find the user
@@ -326,27 +376,35 @@ export const requestVolunteerForEvent = async (req, res) => {
     );
 
     if (isAlreadySubscribed) {
-      return res.status(400).json({ message: "User is already registered for this event" });
+      return res
+        .status(400)
+        .json({ message: "User is already registered for this event" });
     }
 
     // Send email with await to ensure it completes
-    const emailResult = await sendEmail(user.email, "requestforEventRegistration", {
-      name: user.name,
-      eventName: event.name,
-      eventCategory: event.category,
-      eventDate: new Date(event.date).toLocaleDateString(),
-      eventLocation: event.location,
-      registrationDeadline: new Date(event.registrationEnd).toLocaleDateString()
-    });
+    const emailResult = await sendEmail(
+      user.email,
+      "requestforEventRegistration",
+      {
+        name: user.name,
+        eventName: event.name,
+        eventCategory: event.category,
+        eventDate: new Date(event.date).toLocaleDateString(),
+        eventLocation: event.location,
+        registrationDeadline: new Date(
+          event.registrationEnd
+        ).toLocaleDateString(),
+      }
+    );
 
     if (!emailResult.success) {
       console.error("Failed to send email:", emailResult.error);
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Volunteer registered for event successfully",
       user,
-      emailSent: emailResult.success
+      emailSent: emailResult.success,
     });
   } catch (error) {
     console.error("Error registering volunteer for event:", error);
@@ -356,11 +414,11 @@ export const requestVolunteerForEvent = async (req, res) => {
 
 export const getIdOfVolunteer = async (req, res) => {
   const email = req.params.email;
-  console.log(email)
+  console.log(email);
   try {
-    const user = await User.findOne({email}).select('_id');
+    const user = await User.findOne({ email }).select("_id");
     console.log(user);
-    
+
     if (!user) {
       return res.status(404).json({ error: true, message: "User not found" });
     }
