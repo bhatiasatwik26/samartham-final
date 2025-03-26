@@ -34,9 +34,6 @@ const LeaderboardPage = () => {
       try {
         setLoading(true);
         
-        // In a real app, fetch data from API
-        // const response = await fetch('/api/leaderboard/full');
-        // const data = await response.json();
         
         // For now, use mock data
         const mockData: Volunteer[] = [

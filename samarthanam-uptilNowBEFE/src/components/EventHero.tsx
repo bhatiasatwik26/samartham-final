@@ -156,6 +156,16 @@ const EventHero = ({
           d="M0,96L48,85.3C96,75,192,53,288,53.3C384,53,480,75,576,85.3C672,96,768,96,864,96C960,96,1056,96,1152,85.3C1248,75,1344,53,1392,42.7L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
         ></path>
       </svg>
+
+      {/* Gesture Demo Button - Positioned at bottom left */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <Button 
+          className="rounded-full bg-red-600/80 hover:bg-red-700 text-white px-6 py-2 shadow-md hover:shadow-lg transition-all duration-300"
+          aria-label="Gesture Demo (Showcase only)"
+        >
+          Gesture Demo
+        </Button>
+      </div>
     </div>
   );
 };
