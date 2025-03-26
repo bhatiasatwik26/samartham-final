@@ -8,7 +8,8 @@ import {
   addVolunteer,
   updateVolunteer,
   assignTaskToUser,
-  requestVolunteerForEvent
+  requestVolunteerForEvent,
+  getIdOfVolunteer
 } from "../controllers/user.controller.js"; // Import controller
 
 const router = express.Router();
@@ -24,6 +25,9 @@ router.get("/volunteers", getAllVolunteers);
 
 // register a new volunteer
 router.post("/register", registerVolunteer);
+
+// login volunteer
+router.get("/mailtoid/:email", getIdOfVolunteer)
 
 // add a new volunteer
 router.post("/add", addVolunteer);

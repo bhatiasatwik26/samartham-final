@@ -34,7 +34,7 @@ const App = () => {
         <Route path="/events" element={<Events />} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
+        <Route path="/volunteer-dashboard/:id" element={<VolunteerDashboard />} />
         <Route path="/volunteer-register" element={<VolunteerRegister />} />
         <Route path="/volunteer-login" element={<VolunteerLogin />} />
         <Route path="/badges" element={<BadgesPage />} />

@@ -353,3 +353,20 @@ export const requestVolunteerForEvent = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const getIdOfVolunteer = async (req, res) => {
+  const email = req.params.email;
+  console.log(email)
+  try {
+    const user = await User.findOne({email}).select('_id');
+    console.log(user);
+    
+    if (!user) {
+      return res.status(404).json({ error: true, message: "User not found" });
+    }
+    res.json({ error: false, id: user._id });
+  } catch (error) {
+    console.error("Error fetching user ID:", error);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+};

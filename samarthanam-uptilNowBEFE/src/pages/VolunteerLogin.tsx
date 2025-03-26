@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Users } from 'lucide-react';
+import { log } from 'console';
 
 const VolunteerLogin = () => {
   const { ref, isVisible } = useInView();
@@ -23,28 +24,23 @@ const VolunteerLogin = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
-    // For now, hardcode the credentials to 'admin' / 'admin'
-    if (username === 'admin' && password === 'admin') {
-      // Simulate API call
-      setTimeout(() => {
-        setLoading(false);
-        toast.success('Login successful!');
-        // Store some mock auth token or user data
-        localStorage.setItem('volunteer_auth', JSON.stringify({
-          isAuthenticated: true,
-          name: 'John Doe',
-          role: 'volunteer'
-        }));
-        navigate('/volunteer-dashboard');
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        setLoading(false);
-        setError('Invalid username or password. Please try admin/admin.');
-      }, 1000);
+    if(password == "wrong"){
+      setError("Credentials dont match!")
+      setLoading(false)
+      return
     }
+    validate();
   };
+  const validate = async ()=>{
+    const res = await fetch(`http://localhost:3000/api/user/mailtoid/${username}`)
+    const data = await res.json();
+    if(data.error)
+        setError(data.message)
+    else
+      navigate(`/volunteer-dashboard/${data.id}`) 
+    setLoading(false)
+      
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -77,12 +73,12 @@ const VolunteerLogin = () => {
               
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">Email</Label>
                   <Input
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username"
+                    placeholder="abc@xyz.com"
                     required
                     autoComplete="username"
                     className="rounded-md border-gray-300/50 focus:border-red-600 focus:ring-red-600/20"

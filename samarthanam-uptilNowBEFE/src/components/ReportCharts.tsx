@@ -441,8 +441,8 @@ const ReportCharts: React.FC<ReportChartsProps> = ({ reports = [], categoryStats
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="charts">Charts</TabsTrigger>
               <TabsTrigger value="table">Data Table</TabsTrigger>
-            </TabsList>
-            
+          </TabsList>
+
             <TabsContent value="charts" className="space-y-6">
               {/* Event Statistics */}
               {reports.length > 0 && (
@@ -495,8 +495,8 @@ const ReportCharts: React.FC<ReportChartsProps> = ({ reports = [], categoryStats
                   </div>
                 </div>
               )}
-            </TabsContent>
-            
+          </TabsContent>
+
             <TabsContent value="table">
               {/* Data Tables */}
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
@@ -562,9 +562,9 @@ const ReportCharts: React.FC<ReportChartsProps> = ({ reports = [], categoryStats
                   </div>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
-        </div>
+          </TabsContent>
+        </Tabs>
+      </div>
       )}
     </div>
   );

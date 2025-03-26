@@ -7,24 +7,29 @@ import mongoose from "mongoose";
 export const getEventStats = async (req, res) => {
   try {
     const events = await Event.find({})
-      .select("name category volunteersAssigned ratings reviews photos date")
+      .select("name category ratings reviews photos date")
       .lean();
 
     // Create stats array with volunteer and participant counts
     const stats = await Promise.all(events.map(async (event) => {
+      const eventId = new mongoose.Types.ObjectId(event._id);
+
+      // Count volunteers from User model
+      const volunteerCount = await User.countDocuments({ "eventsSubscribed.eventId": eventId });
+
       // Count participants from Participant model
-      const participantCount = await Participant.countDocuments({ 
-        "participatedEvents.eventId": event._id 
-      });
+      const participantCount = await Participant.countDocuments({ "participatedEvents.eventId": eventId });
 
       // Calculate event rating
       const totalRatings = Object.values(event.ratings || {}).reduce((acc, count) => acc + count, 0);
       const weightedSum = Object.entries(event.ratings || {}).reduce((sum, [rating, count]) => sum + Number(rating) * count, 0);
       const averageRating = totalRatings > 0 ? (weightedSum / totalRatings).toFixed(1) : 0;
 
+      console.log(`Event: ${event.name}, Volunteers: ${volunteerCount}, Participants: ${participantCount}`);
+
       return {
         eventname: event.name,
-        volunteer: event.volunteersAssigned?.length || 0,
+        volunteer: volunteerCount,
         participant: participantCount,
         category: event.category,
         rating: averageRating,
@@ -38,14 +43,16 @@ export const getEventStats = async (req, res) => {
       data: stats
     });
   } catch (error) {
-    console.error('Error getting event stats:', error);
+    console.error("Error getting event stats:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error fetching event statistics',
+      message: "Error fetching event statistics",
       error: error.message
     });
   }
 };
+
+
 
 // Get category-wise statistics
 export const getCategoryStats = async (req, res) => {
@@ -101,7 +108,7 @@ export const getCategoryStats = async (req, res) => {
 // Get overall dashboard stats
 export const getDashboardStats = async (req, res) => {
   try {
-    const totalVolunteers = await User.countDocuments({ role: "volunteer" });
+    const totalVolunteers = await User.countDocuments();
     const totalEvents = await Event.countDocuments();
     const activeEvents = await Event.countDocuments({ 
       eventEnd: { $gte: new Date() } 
